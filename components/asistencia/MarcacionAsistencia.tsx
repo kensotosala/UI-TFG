@@ -1,388 +1,205 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAsistencia } from "@/hooks/useAsistencia";
 import {
-  Clock,
-  CheckCircle,
-  LogIn,
-  LogOut,
-  Loader2,
-  User,
-  Building,
-  Calendar,
-  CheckCheck,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2, Clock, Calendar } from "lucide-react";
+import { useMarcacion } from "@/hooks/useMarcacion";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface MarcacionAsistenciaProps {
   empleadoId: number;
-  nombreEmpleado?: string;
-  departamento?: string;
 }
 
 export const MarcacionAsistencia: React.FC<MarcacionAsistenciaProps> = ({
   empleadoId,
-  nombreEmpleado = "Empleado",
-  departamento = "Departamento",
 }) => {
-  const { toast } = useToast();
-  const [horaLocal, setHoraLocal] = useState<string>("");
-  const [fechaActual, setFechaActual] = useState<string>("");
+  const { marcarAsistencia, loading, error, data } = useMarcacion();
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const { marcarAsistencia, cargarEstado, isLoading, estado, horaServer } =
-    useAsistencia({
-      empleadoId,
-      onSuccess: (message) => {
-        toast({
-          title: "✅ Asistencia registrada",
-          description: message,
-          duration: 5000,
-        });
-      },
-      onError: (error) => {
-        toast({
-          title: "❌ Error",
-          description: error,
-          variant: "destructive",
-          duration: 5000,
-        });
-      },
-    });
+  const handleMarcar = async () => {
+    if (!empleadoId || empleadoId <= 0) {
+      alert("ID de empleado inválido");
+      return;
+    }
 
-  // Actualizar hora local y fecha
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setHoraLocal(
-        now.toLocaleTimeString("es-ES", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-      );
+    const result = await marcarAsistencia(empleadoId);
 
-      setFechaActual(
-        now.toLocaleDateString("es-ES", {
-          weekday: "long",
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        })
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Cargar estado inicial
-  useEffect(() => {
-    cargarEstado();
-  }, [cargarEstado]);
-
-  const getEstadoInfo = () => {
-    if (!estado)
-      return {
-        texto: "Cargando...",
-        icon: <Loader2 className="h-4 w-4 animate-spin" />,
-        color: "bg-gray-100 text-gray-800",
-      };
-
-    switch (estado.estado) {
-      case "PENDIENTE":
-        return {
-          texto: "Pendiente de entrada",
-          icon: <Clock className="h-4 w-4" />,
-          color: "bg-yellow-100 text-yellow-800 border-yellow-300",
-        };
-      case "PRESENTE":
-        return {
-          texto: "Presente (pendiente salida)",
-          icon: <LogIn className="h-4 w-4" />,
-          color: "bg-green-100 text-green-800 border-green-300",
-        };
-      case "COMPLETO":
-        return {
-          texto: "Jornada completada",
-          icon: <CheckCircle className="h-4 w-4" />,
-          color: "bg-blue-100 text-blue-800 border-blue-300",
-        };
-      default:
-        return {
-          texto: estado.estado,
-          icon: <Clock className="h-4 w-4" />,
-          color: "bg-gray-100 text-gray-800",
-        };
+    if (result.success) {
+      setShowSuccess(true);
+      // Ocultar el mensaje de éxito después de 5 segundos
+      setTimeout(() => setShowSuccess(false), 5000);
+    } else {
+      // El error ya está manejado en el hook y mostrado en la UI
     }
   };
 
-  const getBotonInfo = () => {
-    if (!estado)
-      return {
-        texto: "Cargando...",
-        icon: <Loader2 className="h-5 w-5 animate-spin mr-2" />,
-        variant: "default" as const,
-        disabled: true,
-      };
+  // Determinar el estado visual basado en la respuesta
+  const getEstadoVisual = () => {
+    if (!data?.data) return null;
 
-    if (estado.estado === "PENDIENTE")
+    const estado = data.data.estado?.toUpperCase();
+
+    if (
+      estado === "COMPLETO" ||
+      (data.data.horaEntrada && data.data.horaSalida)
+    ) {
       return {
-        texto: "Marcar Entrada",
-        icon: <LogIn className="h-5 w-5 mr-2" />,
-        variant: "default" as const,
-        className: "bg-green-600 hover:bg-green-700",
+        texto: "Asistencia Completa",
+        variant: "success" as const,
+        icon: <CheckCircle2 className="h-5 w-5" />,
       };
-    if (estado.estado === "PRESENTE")
+    } else if (estado === "PRESENTE" || data.data.horaEntrada) {
       return {
-        texto: "Marcar Salida",
-        icon: <LogOut className="h-5 w-5 mr-2" />,
+        texto: "Entrada Registrada",
         variant: "default" as const,
-        className: "bg-blue-600 hover:bg-blue-700",
+        icon: <Clock className="h-5 w-5" />,
       };
-    return {
-      texto: "Jornada Completada",
-      icon: <CheckCheck className="h-5 w-5 mr-2" />,
-      variant: "secondary" as const,
-      disabled: true,
-      className: "bg-gray-300 cursor-not-allowed",
-    };
+    } else if (estado === "PENDIENTE") {
+      return {
+        texto: "Pendiente",
+        variant: "secondary" as const,
+        icon: <Clock className="h-5 w-5" />,
+      };
+    }
+
+    return null;
   };
 
-  const estaDeshabilitado = estado?.estado === "COMPLETO";
-  const estadoInfo = getEstadoInfo();
-  const botonInfo = getBotonInfo();
+  const estadoVisual = getEstadoVisual();
+  const horaActual = new Date().toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 
   return (
-    <Card className="w-full shadow-lg border border-gray-200">
-      <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row items-stretch gap-6">
-          {/* Columna 1: Información del empleado */}
-          <div className="flex-1 space-y-4 min-w-62.5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <User className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">{nombreEmpleado}</h3>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Building className="h-4 w-4" />
-                  <span className="text-sm">{departamento}</span>
-                </div>
-                <div className="mt-1">
-                  <Badge variant="outline" className="text-xs">
-                    ID: {empleadoId}
-                  </Badge>
-                </div>
-              </div>
-            </div>
+    <Card className="w-full max-w-md mx-auto shadow-lg">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl">Marcación de Asistencia</CardTitle>
+          <Calendar className="h-5 w-5 text-gray-500" />
+        </div>
+        <CardDescription>
+          Marca tu entrada o salida para el día de hoy
+        </CardDescription>
+      </CardHeader>
 
-            <Separator />
-
-            {/* Estado actual */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">
-                ESTADO ACTUAL
-              </h4>
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${estadoInfo.color}`}
-              >
-                {estadoInfo.icon}
-                <span className="font-medium">{estadoInfo.texto}</span>
-              </div>
-            </div>
-
-            {/* Fecha */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">FECHA</h4>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50">
-                <Calendar className="h-4 w-4 text-gray-600" />
-                <span className="font-medium">{fechaActual}</span>
-              </div>
-            </div>
+      <CardContent className="space-y-4">
+        {/* Información de estado */}
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Estado:</span>
+            {estadoVisual ? (
+              <Badge className="gap-1">
+                {estadoVisual.icon}
+                {estadoVisual.texto}
+              </Badge>
+            ) : (
+              <Badge variant="outline">Sin registro</Badge>
+            )}
           </div>
+          <div className="text-sm text-gray-600">{horaActual}</div>
+        </div>
 
-          <Separator
-            orientation="vertical"
-            className="hidden md:block h-auto"
-          />
-
-          {/* Columna 2: Tiempos y registro */}
-          <div className="flex-1 min-w-75">
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              {/* Hora Local */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">HORA LOCAL</span>
-                </div>
-                <div className="text-2xl font-mono font-bold bg-gray-50 p-3 rounded-lg">
-                  {horaLocal}
+        {/* Información de horarios */}
+        {data?.data && (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            {data.data.horaEntrada && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-blue-700 font-medium">Entrada</div>
+                <div className="text-lg font-semibold">
+                  {new Date(data.data.horaEntrada).toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
-
-              {/* Hora Servidor */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">HORA SERVIDOR</span>
-                </div>
-                <div className="text-2xl font-mono font-bold bg-gray-50 p-3 rounded-lg">
-                  {horaServer || "--:--"}
-                </div>
-              </div>
-            </div>
-
-            {/* Registros del día */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-500">
-                REGISTRO DEL DÍA
-              </h4>
-
-              <div className="space-y-3">
-                {/* Entrada */}
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-50 rounded-lg">
-                      <LogIn className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Entrada</p>
-                      <p className="text-xs text-gray-500">Hora de inicio</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-mono font-semibold">
-                      {estado?.horaEntrada || "--:--"}
-                    </div>
-                    <div className="text-xs text-gray-500">HH:MM</div>
-                  </div>
-                </div>
-
-                {/* Salida */}
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <LogOut className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Salida</p>
-                      <p className="text-xs text-gray-500">
-                        Hora de finalización
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-mono font-semibold">
-                      {estado?.horaSalida || "--:--"}
-                    </div>
-                    <div className="text-xs text-gray-500">HH:MM</div>
-                  </div>
+            )}
+            {data.data.horaSalida && (
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="text-green-700 font-medium">Salida</div>
+                <div className="text-lg font-semibold">
+                  {new Date(data.data.horaSalida).toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
-            </div>
+            )}
           </div>
+        )}
 
-          <Separator
-            orientation="vertical"
-            className="hidden md:block h-auto"
-          />
+        <Separator />
 
-          {/* Columna 3: Acción */}
-          <div className="flex-1 min-w-50">
-            <div className="h-full flex flex-col justify-center">
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold mb-2">
-                    ACCIÓN REQUERIDA
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {estado?.estado === "PENDIENTE"
-                      ? "Presiona el botón para registrar tu entrada"
-                      : estado?.estado === "PRESENTE"
-                      ? "Presiona el botón para registrar tu salida"
-                      : "Tu jornada ha sido completada"}
+        {/* Botón de acción */}
+        <Button
+          onClick={handleMarcar}
+          disabled={loading}
+          size="lg"
+          className="w-full"
+          variant={
+            data?.data?.horaEntrada && !data.data.horaSalida
+              ? "default"
+              : "outline"
+          }
+        >
+          {loading ? (
+            <>
+              <span className="mr-2">Procesando...</span>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+            </>
+          ) : data?.data?.horaEntrada && !data.data.horaSalida ? (
+            "Marcar Salida"
+          ) : (
+            "Marcar Entrada"
+          )}
+        </Button>
+
+        {/* Mensajes de éxito */}
+        {showSuccess && data?.success && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700">
+              {data.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Mensajes de error */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error.includes("ya fue completada") ? (
+                <div>
+                  <p className="font-medium">{error}</p>
+                  <p className="text-sm mt-1">
+                    Si necesitas corregir tu horario, contacta con Recursos
+                    Humanos.
                   </p>
                 </div>
+              ) : (
+                error
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
-                <div className="flex flex-col items-center">
-                  <Button
-                    onClick={marcarAsistencia}
-                    disabled={isLoading || botonInfo.disabled}
-                    variant={botonInfo.variant}
-                    className={`w-full py-6 text-lg ${
-                      botonInfo.className || ""
-                    }`}
-                    size="lg"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Procesando...
-                      </>
-                    ) : (
-                      <>
-                        {botonInfo.icon}
-                        {botonInfo.texto}
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Mensajes informativos */}
-                  <div className="mt-4 space-y-2 text-center">
-                    {estaDeshabilitado && (
-                      <div className="flex items-center justify-center gap-2 text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <p className="text-sm">
-                          ✅ Tu jornada ha sido completada
-                        </p>
-                      </div>
-                    )}
-
-                    {estado?.estado === "PRESENTE" && (
-                      <div className="flex items-center justify-center gap-2 text-blue-600">
-                        <Clock className="h-4 w-4" />
-                        <p className="text-sm">
-                          ⏰ Recuerda marcar tu salida al finalizar
-                        </p>
-                      </div>
-                    )}
-
-                    {estado?.estado === "PENDIENTE" && (
-                      <div className="text-sm text-gray-500">
-                        La hora del servidor es la oficial para el registro
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Información adicional */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h5 className="text-sm font-medium mb-2">
-                    INFORMACIÓN IMPORTANTE
-                  </h5>
-                  <ul className="text-xs text-gray-600 space-y-1">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-3 w-3 text-green-600 mt-0.5 shrink-0" />
-                      <span>El registro se realiza en tiempo real</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-3 w-3 text-green-600 mt-0.5 shrink-0" />
-                      <span>La hora del servidor es la oficial</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-3 w-3 text-green-600 mt-0.5 shrink-0" />
-                      <span>Contacta con RRHH ante cualquier incidencia</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Información adicional */}
+        <div className="text-xs text-gray-500 text-center pt-2">
+          <p>
+            Tu asistencia se registra automáticamente con la hora del servidor.
+          </p>
+          <p>Empleado ID: {empleadoId}</p>
         </div>
       </CardContent>
     </Card>
