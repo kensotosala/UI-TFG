@@ -31,14 +31,6 @@ interface AuthProviderProps {
 // Rutas públicas (no requieren autenticación)
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
-// Rutas por rol (si no especifica, requiere autenticación pero cualquier rol)
-const ROLE_ROUTES: Record<string, string[]> = {
-  "/admin": ["Administrador", "SuperAdmin"],
-  "/reports": ["Administrador", "Gerente", "Supervisor"],
-  "/payroll": ["Administrador", "Contador"],
-  "/employee-management": ["Administrador", "RRHH"],
-};
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,25 +71,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!isAuthenticated) {
       router.push("/login");
       return;
-    }
-
-    // Verificar roles específicos para la ruta
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      // Buscar si la ruta actual tiene restricciones de rol
-      for (const [route, allowedRoles] of Object.entries(ROLE_ROUTES)) {
-        if (pathname?.startsWith(route)) {
-          const hasRequiredRole = allowedRoles.some((role) =>
-            currentUser.roles.includes(role)
-          );
-
-          if (!hasRequiredRole) {
-            router.push("/unauthorized");
-            return;
-          }
-          break;
-        }
-      }
     }
   }, [pathname, isLoading, router]);
 

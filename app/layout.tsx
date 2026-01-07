@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/providers/AuthProvider";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import Navbar from "@/components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,31 +27,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <RootLayoutContent>{children}</RootLayoutContent>
-        </AuthProvider>
+        {children}
       </body>
     </html>
-  );
-}
-
-// Componente separado para contenido que necesita AuthProvider
-async function RootLayoutContent({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <AuthProvider>
-      <div className="flex min-h-screen">
-        <SidebarProvider>
-          <AppSidebar />
-          <div className="flex-1 flex flex-col">
-            <Navbar />
-            <main className="flex-1 p-6 bg-gray-50">{children}</main>
-          </div>
-        </SidebarProvider>
-      </div>
-    </AuthProvider>
   );
 }
