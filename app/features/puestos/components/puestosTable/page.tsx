@@ -7,9 +7,11 @@ import { DataTable } from "./data-table";
 import { Puesto } from "../../types";
 import { PuestoDetailsDialog } from "./detail-dialog";
 import { PuestoEditDialog } from "./edit-dialog";
+import { usePuestoMutations } from "../../hooks/usePuestoMutation";
 
 export default function PuestosTable() {
   const { puestos } = usePuestos();
+  const { updatePuesto, isUpdating } = usePuestoMutations();
 
   const [openView, setOpenView] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
@@ -25,9 +27,26 @@ export default function PuestosTable() {
     setOpenEdit(true);
   };
 
-  const handleSave = (puestoEditado: Puesto) => {
-    console.log("Guardar en backend:", puestoEditado);
-    setOpenEdit(false);
+  const handleSave = async (puestoEditado: Puesto) => {
+    try {
+      await updatePuesto({
+        id: puestoEditado.idPuesto,
+        puesto: {
+          idPuesto: puestoEditado.idPuesto,
+          nombrePuesto: puestoEditado.nombrePuesto,
+          descripcion: puestoEditado.descripcion,
+          nivelJerarquico: puestoEditado.nivelJerarquico,
+          salarioMinimo: puestoEditado.salarioMinimo,
+          salarioMaximo: puestoEditado.salarioMaximo,
+          estado: puestoEditado.estado,
+        },
+      });
+
+      setOpenEdit(false);
+      setSelectedPuesto(null);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const columns = baseColumns(handleVer, handleEditar);
@@ -53,6 +72,7 @@ export default function PuestosTable() {
         onOpenChange={setOpenEdit}
         puesto={selectedPuesto}
         onSave={handleSave}
+        isLoading={isUpdating}
       />
     </>
   );

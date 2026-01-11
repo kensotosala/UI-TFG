@@ -19,6 +19,7 @@ interface PuestoEditDialogProps {
   onOpenChange: (open: boolean) => void;
   puesto: Puesto | null;
   onSave: (puesto: Puesto) => void;
+  isLoading: boolean;
 }
 
 type FormErrors = {
@@ -32,6 +33,7 @@ export function PuestoEditDialog({
   onOpenChange,
   puesto,
   onSave,
+  isLoading,
 }: PuestoEditDialogProps) {
   const [form, setForm] = useState<Puesto | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -63,7 +65,7 @@ export function PuestoEditDialog({
         "El salario máximo no puede ser menor al salario mínimo";
     }
 
-    return newErrors;   
+    return newErrors;
   };
 
   const handleSave = () => {
@@ -166,8 +168,8 @@ export function PuestoEditDialog({
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={hasErrors}>
-              Guardar cambios
+            <Button onClick={handleSave} disabled={hasErrors || isLoading}>
+              {isLoading ? "Guardando..." : "Guardar cambios"}
             </Button>
           </div>
         </div>
