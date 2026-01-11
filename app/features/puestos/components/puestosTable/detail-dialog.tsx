@@ -6,9 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Puesto } from "../types";
 
 import { Badge } from "@/components/ui/badge";
+import { Puesto } from "../../types";
 
 interface PuestoDetailsDialogProps {
   open: boolean;

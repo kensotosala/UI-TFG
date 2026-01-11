@@ -13,7 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 
-export const columns: ColumnDef<Puesto>[] = [
+export const columns = (
+  onVer: (puesto: Puesto) => void
+): ColumnDef<Puesto>[] => [
   {
     accessorKey: "idPuesto",
     header: "ID",
@@ -99,7 +101,9 @@ export const columns: ColumnDef<Puesto>[] = [
               >
                 Copiar ID
               </DropdownMenuItem> */}
-              <DropdownMenuItem>Ver</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onVer(puesto)}>
+                Ver
+              </DropdownMenuItem>
               <DropdownMenuItem>Editar</DropdownMenuItem>
               <DropdownMenuItem className="text-red-500">
                 Eliminar
