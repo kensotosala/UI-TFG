@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { MarcacionAsistencia } from "@/app/features/asistencia/components/MarcacionAsistencia";
 import DisplayDate from "@/components/DisplayDate";
 import { useAuth } from "@/hooks/useAuth";
