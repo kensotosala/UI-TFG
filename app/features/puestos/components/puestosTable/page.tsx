@@ -6,19 +6,31 @@ import { columns as baseColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { Puesto } from "../../types";
 import { PuestoDetailsDialog } from "./detail-dialog";
+import { PuestoEditDialog } from "./edit-dialog";
 
 export default function PuestosTable() {
   const { puestos } = usePuestos();
 
-  const [open, setOpen] = useState(false);
+  const [openView, setOpenView] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
   const [selectedPuesto, setSelectedPuesto] = useState<Puesto | null>(null);
 
-  const handleVerPuesto = (puesto: Puesto) => {
+  const handleVer = (puesto: Puesto) => {
     setSelectedPuesto(puesto);
-    setOpen(true);
+    setOpenView(true);
   };
 
-  const columns = baseColumns(handleVerPuesto);
+  const handleEditar = (puesto: Puesto) => {
+    setSelectedPuesto(puesto);
+    setOpenEdit(true);
+  };
+
+  const handleSave = (puestoEditado: Puesto) => {
+    console.log("Guardar en backend:", puestoEditado);
+    setOpenEdit(false);
+  };
+
+  const columns = baseColumns(handleVer, handleEditar);
 
   if (puestos.length === 0) {
     return <p className="text-center py-10">No hay puestos registrados.</p>;
@@ -31,9 +43,16 @@ export default function PuestosTable() {
       </div>
 
       <PuestoDetailsDialog
-        open={open}
-        onOpenChange={setOpen}
+        open={openView}
+        onOpenChange={setOpenView}
         puesto={selectedPuesto}
+      />
+
+      <PuestoEditDialog
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        puesto={selectedPuesto}
+        onSave={handleSave}
       />
     </>
   );
