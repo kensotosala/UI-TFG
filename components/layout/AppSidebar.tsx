@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronUp, Home, User2 } from "lucide-react";
+import { Briefcase, ChevronUp, Home, User2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -16,20 +16,26 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from "./ui/sidebar";
+} from "../ui/sidebar";
+
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { useAuth } from "@/hooks/useAuth";
+} from "../ui/dropdown-menu";
 
 const items = [
   {
     title: "Dashboard",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Puestos",
+    url: "/puestos",
+    icon: Briefcase,
   },
 ];
 

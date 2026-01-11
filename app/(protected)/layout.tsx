@@ -1,7 +1,7 @@
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import Navbar from "@/components/layout/Navbar";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import Navbar from "@/components/Navbar";
 
 export default function ProtectedLayout({
   children,

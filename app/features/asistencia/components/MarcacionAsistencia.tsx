@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Clock, Calendar } from "lucide-react";
-import { useMarcacion } from "@/hooks/useMarcacion";
+import { useMarcacion } from "@/app/features/asistencia/hooks/useMarcacion";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 

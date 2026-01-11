@@ -7,7 +7,7 @@ import {
   authService,
   LoginCredentials,
   UserData,
-} from "@/services/authService";
+} from "@/app/features/auth/services/authService";
 import { useRouter, usePathname } from "next/navigation";
 
 interface UseAuthReturn {

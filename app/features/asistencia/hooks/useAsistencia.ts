@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from "react";
-import { asistenciaService } from "@/services/asistenciaService";
-import { AsistenciaEstado } from "@/types/asistencia";
+import { asistenciaService } from "@/app/features/auth/services/asistenciaService";
+import { AsistenciaEstado } from "../types";
 
 interface UseAsistenciaProps {
   empleadoId: number;

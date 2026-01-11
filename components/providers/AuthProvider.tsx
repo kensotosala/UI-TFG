@@ -12,7 +12,7 @@ import {
   authService,
   UserData,
   LoginCredentials,
-} from "@/services/authService";
+} from "@/app/features/auth/services/authService";
 import { Loader2 } from "lucide-react";
 
 interface AuthContextType {
