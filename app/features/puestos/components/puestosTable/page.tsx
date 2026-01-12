@@ -3,19 +3,27 @@
 import { useState } from "react";
 import { usePuestos } from "../../hooks/usePuestos";
 import { columns as baseColumns } from "./columns";
-import { DataTable } from "./data-table";
 import { Puesto } from "../../types";
 import { PuestoDetailsDialog } from "./detail-dialog";
 import { PuestoEditDialog } from "./edit-dialog";
 import { usePuestoMutations } from "../../hooks/usePuestoMutation";
 import { PuestoDeleteDialog } from "./delete-dialog";
+import { Button } from "@/components/ui/button";
+import { PuestoCreateDialog } from "./create-dialog";
 
 export default function PuestosTable() {
   const { puestos } = usePuestos();
-  const { updatePuesto, deletePuesto, isUpdating, isDeleting } =
-    usePuestoMutations();
+  const {
+    createPuesto,
+    updatePuesto,
+    deletePuesto,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = usePuestoMutations();
 
   const [openView, setOpenView] = useState(false);
+  const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedPuesto, setSelectedPuesto] = useState<Puesto | null>(null);
@@ -23,6 +31,17 @@ export default function PuestosTable() {
   const handleVer = (puesto: Puesto) => {
     setSelectedPuesto(puesto);
     setOpenView(true);
+  };
+
+  const handleCreate = async (
+    puesto: Omit<Puesto, "idPuesto" | "fechaCreacion" | "fechaModificacion">
+  ) => {
+    try {
+      await createPuesto(puesto);
+      setOpenCreate(false);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleEditar = (puesto: Puesto) => {
@@ -66,7 +85,13 @@ export default function PuestosTable() {
   return (
     <>
       <div className="container mx-auto py-10">
-        <DataTable columns={columns} data={puestos} />
+        <div className="flex items-center mb-4">
+          <h1 className="text-3xl font-semibold">Lista de Puestos</h1>
+
+          <Button className="ml-auto" onClick={() => setOpenCreate(true)}>
+            Agregar Puesto
+          </Button>
+        </div>
       </div>
 
       <PuestoDetailsDialog
@@ -99,6 +124,13 @@ export default function PuestosTable() {
             console.error(error);
           }
         }}
+      />
+
+      <PuestoCreateDialog
+        open={openCreate}
+        onOpenChange={setOpenCreate}
+        onSave={handleCreate}
+        isLoading={isCreating}
       />
     </>
   );
