@@ -1,4 +1,4 @@
-import { usePuestosQuery } from "../queries/puestos.queries";
+
 import { usePuestoMutations } from "./usePuestoMutation";
 
 export const usePuestos = () => {

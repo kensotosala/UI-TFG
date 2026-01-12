@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChevronUp, Home, User2 } from "lucide-react";
+import { Briefcase, Building2, ChevronUp, Home, User2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -36,6 +36,11 @@ const items = [
     title: "Puestos",
     url: "/puestos",
     icon: Briefcase,
+  },
+  {
+    title: "Departamentos",
+    url: "/departamentos",
+    icon: Building2,
   },
 ];
 
