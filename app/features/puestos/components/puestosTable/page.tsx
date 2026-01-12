@@ -9,7 +9,6 @@ import { PuestoEditDialog } from "./edit-dialog";
 import { usePuestoMutations } from "../../hooks/usePuestoMutation";
 import { PuestoDeleteDialog } from "./delete-dialog";
 import { Button } from "@/components/ui/button";
-import { PuestoCreateDialog } from "./create-dialog";
 
 export default function PuestosTable() {
   const { puestos } = usePuestos();
@@ -126,7 +125,7 @@ export default function PuestosTable() {
         }}
       />
 
-      <PuestoCreateDialog
+      <PuestoDeleteDialog
         open={openCreate}
         onOpenChange={setOpenCreate}
         onSave={handleCreate}
