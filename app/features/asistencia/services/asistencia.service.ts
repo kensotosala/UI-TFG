@@ -1,5 +1,3 @@
-// services/asistenciaService.ts
-
 import axios, { AxiosError } from "axios";
 import {
   ActualizarAsistenciaDTO,
@@ -30,6 +28,26 @@ const handleApiError = (error: unknown): never => {
     throw new Error(message);
   }
   throw new Error("Error inesperado");
+};
+
+// Formatea fecha al formato YYYY-MM-DD
+const formatDateForBackend = (date: Date | string): string => {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toISOString().split("T")[0];
+};
+
+// Formatea hora al formato HH:mm:ss
+const formatTimeForBackend = (date: Date | string): string => {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const seconds = String(d.getSeconds()).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+// Combina fecha y hora en formato ISO
+const combinarFechaHora = (fecha: string, hora: string): string => {
+  return `${fecha}T${hora}`;
 };
 
 /**
@@ -112,19 +130,16 @@ export const asistenciaService = {
       if (filtros?.page) params.append("page", filtros.page.toString());
       if (filtros?.limit) params.append("limit", filtros.limit.toString());
 
-      // ✅ CAMBIO: El backend devuelve un array directo
       const { data } = await axios.get<AsistenciaBackend[]>(
         `${API_BASE_URL}/Asistencias?${params.toString()}`
       );
 
-      console.log("✅ Backend data:", data); // DEBUG
+      console.log("✅ Backend data:", data);
 
-      // ✅ TRANSFORMAR: Convertir datos del backend al formato frontend
       const transformedData = data.map(transformBackendToFrontend);
 
-      console.log("✅ Transformed data:", transformedData); // DEBUG
+      console.log("✅ Transformed data:", transformedData);
 
-      // ✅ RETORNAR: En el formato que espera el frontend
       return {
         data: transformedData,
         total: transformedData.length,
@@ -176,15 +191,61 @@ export const asistenciaService = {
 
   /**
    * Crear nueva asistencia
+   * ✅ CORREGIDO: Usa API_BASE_URL y maneja correctamente los tipos
    */
-  create: async (asistencia: CrearAsistenciaDTO): Promise<Asistencia> => {
+  create: async (data: CrearAsistenciaDTO): Promise<Asistencia> => {
     try {
-      const { data } = await axios.post<Asistencia>(
+      // 1. Validar datos requeridos
+      if (!data.empleadoId || !data.fechaRegistro || !data.estado) {
+        throw new Error(
+          "Faltan datos requeridos: empleadoId, fechaRegistro y estado son obligatorios"
+        );
+      }
+
+      // 2. Preparar payload base
+      const payload: Record<string, unknown> = {
+        empleadoId: Number(data.empleadoId), // ✅ Asegurar que sea número
+        fechaRegistro: formatDateForBackend(data.fechaRegistro),
+        estado: data.estado,
+      };
+
+      // 3. Agregar horaEntrada solo si existe
+      if (data.horaEntrada) {
+        const horaFormateada = data.horaEntrada.includes("T")
+          ? formatTimeForBackend(data.horaEntrada)
+          : data.horaEntrada;
+
+        payload.horaEntrada = combinarFechaHora(
+          formatDateForBackend(data.fechaRegistro),
+          horaFormateada
+        );
+      }
+
+      // 4. Agregar horaSalida solo si existe
+      if (data.horaSalida) {
+        const horaFormateada = data.horaSalida.includes("T")
+          ? formatTimeForBackend(data.horaSalida)
+          : data.horaSalida;
+
+        payload.horaSalida = combinarFechaHora(
+          formatDateForBackend(data.fechaRegistro),
+          horaFormateada
+        );
+      }
+
+      console.log("📤 Payload enviado al backend:", payload);
+
+      // 5. ✅ CORREGIDO: Usar API_BASE_URL en lugar de API_URL
+      const response = await axios.post<Asistencia>(
         `${API_BASE_URL}/Asistencias`,
-        asistencia
+        payload
       );
-      return data;
+
+      console.log("✅ Respuesta del backend:", response.data);
+
+      return response.data;
     } catch (error) {
+      console.error("❌ Error al crear asistencia:", error);
       return handleApiError(error);
     }
   },

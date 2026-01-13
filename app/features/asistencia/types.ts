@@ -1,5 +1,3 @@
-// types/asistencia.types.ts
-
 /**
  * Estados posibles de una asistencia
  */
@@ -90,15 +88,15 @@ export interface AsistenciaDetallada extends Asistencia {
 
 /**
  * Payload para crear una nueva asistencia
+ * ✅ CORREGIDO: empleadoId ahora acepta string o number
  */
 export interface CrearAsistenciaDTO {
-  empleadoId: string;
-  fecha: string;
+  empleadoId: string | number; // ✅ Acepta ambos tipos
+  fechaRegistro: string; // ✅ CORREGIDO: era "fecha", ahora "fechaRegistro"
   horaEntrada?: string;
   horaSalida?: string;
   estado: EstadoAsistencia;
-  observaciones?: string;
-  justificacion?: Omit<Justificacion, "aprobadoPor" | "fechaAprobacion">;
+  observaciones?: string; // ✅ AGREGADO: campo opcional
 }
 
 /**

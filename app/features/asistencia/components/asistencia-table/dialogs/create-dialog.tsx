@@ -1,4 +1,3 @@
-// components/asistencias/AsistenciaCreateDialog.tsx
 "use client";
 
 import { useState } from "react";
@@ -38,9 +37,10 @@ interface AsistenciaCreateDialogProps {
   onCreate: (data: CrearAsistenciaDTO) => Promise<void>;
 }
 
+// ✅ CORREGIDO: Usar fechaRegistro en lugar de fecha
 const initialFormData: CrearAsistenciaDTO = {
   empleadoId: "",
-  fecha: "",
+  fechaRegistro: "", // ✅ CORREGIDO
   horaEntrada: "",
   horaSalida: "",
   estado: EstadoAsistencia.PRESENTE,
@@ -73,13 +73,56 @@ export function AsistenciaCreateDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
     try {
-      await onCreate(formData);
+      // Validaciones antes de enviar
+      if (!formData.empleadoId) {
+        alert("Por favor seleccione un empleado");
+        return;
+      }
+
+      if (!formData.fechaRegistro) {
+        alert("Por favor seleccione una fecha");
+        return;
+      }
+
+      if (!formData.estado) {
+        alert("Por favor seleccione un estado");
+        return;
+      }
+
+      // Preparar payload - El servicio se encargará del formato
+      const payload: CrearAsistenciaDTO = {
+        empleadoId: formData.empleadoId,
+        fechaRegistro: formData.fechaRegistro,
+        estado: formData.estado,
+      };
+
+      // Solo agregar horaEntrada si existe y no está vacía
+      if (formData.horaEntrada && formData.horaEntrada.trim() !== "") {
+        payload.horaEntrada = formData.horaEntrada;
+      }
+
+      // Solo agregar horaSalida si existe y no está vacía
+      if (formData.horaSalida && formData.horaSalida.trim() !== "") {
+        payload.horaSalida = formData.horaSalida;
+      }
+
+      // Solo agregar observaciones si existen y no están vacías
+      if (formData.observaciones && formData.observaciones.trim() !== "") {
+        payload.observaciones = formData.observaciones;
+      }
+
+      console.log("📝 Datos del formulario:", payload);
+
+      await onCreate(payload);
+
+      // Resetear formulario y cerrar diálogo
       setFormData(initialFormData);
       setDate(undefined);
       onOpenChange(false);
     } catch (error) {
-      console.error("Error al crear asistencia:", error);
+      console.error("❌ Error en handleSubmit:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -101,7 +144,7 @@ export function AsistenciaCreateDialog({
                 Empleado *
               </Label>
               <Select
-                value={formData.empleadoId || undefined}
+                value={formData.empleadoId?.toString() || ""}
                 onValueChange={(value) => handleChange("empleadoId", value)}
                 required
               >
@@ -151,7 +194,11 @@ export function AsistenciaCreateDialog({
                     onSelect={(selectedDate) => {
                       if (!selectedDate) return;
                       setDate(selectedDate);
-                      handleChange("fecha", formatDateToISO(selectedDate));
+                      // ✅ CORREGIDO: Usar fechaRegistro
+                      handleChange(
+                        "fechaRegistro",
+                        formatDateToISO(selectedDate)
+                      );
                       setOpenPopover(false);
                     }}
                   />
@@ -170,7 +217,7 @@ export function AsistenciaCreateDialog({
                   <Input
                     id="horaEntrada"
                     type="time"
-                    value={formData.horaEntrada}
+                    value={formData.horaEntrada || ""}
                     onChange={(e) =>
                       handleChange("horaEntrada", e.target.value)
                     }
@@ -188,7 +235,7 @@ export function AsistenciaCreateDialog({
                   <Input
                     id="horaSalida"
                     type="time"
-                    value={formData.horaSalida}
+                    value={formData.horaSalida || ""}
                     onChange={(e) => handleChange("horaSalida", e.target.value)}
                     className="pl-10"
                   />
@@ -216,7 +263,7 @@ export function AsistenciaCreateDialog({
                     <SelectLabel>Estados</SelectLabel>
                     {Object.values(EstadoAsistencia).map((estado) => (
                       <SelectItem key={estado} value={estado}>
-                        {estado}
+                        {estado.replace(/_/g, " ")}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -231,7 +278,7 @@ export function AsistenciaCreateDialog({
               </Label>
               <Textarea
                 id="observaciones"
-                value={formData.observaciones}
+                value={formData.observaciones || ""}
                 onChange={(e) => handleChange("observaciones", e.target.value)}
                 placeholder="Agregar comentarios adicionales..."
                 rows={3}
@@ -243,7 +290,11 @@ export function AsistenciaCreateDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                setFormData(initialFormData);
+                setDate(undefined);
+                onOpenChange(false);
+              }}
               disabled={isSubmitting}
             >
               Cancelar

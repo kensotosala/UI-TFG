@@ -15,14 +15,23 @@ export const useAsistenciaMutations = () => {
   const queryClient = useQueryClient();
 
   const crearAsistencia = useMutation({
-    mutationFn: (data: CrearAsistenciaDTO) => asistenciaService.create(data),
+    mutationFn: (data: CrearAsistenciaDTO) => {
+      console.log("🚀 useAsistenciaMutations - Creando asistencia:", data);
+      return asistenciaService.create(data);
+    },
     onSuccess: (_, variables) => {
+      // Convertir empleadoId a string para las queries si es número
+      const empleadoIdString =
+        typeof variables.empleadoId === "number"
+          ? variables.empleadoId.toString()
+          : variables.empleadoId;
+
       queryClient.invalidateQueries({ queryKey: ["asistencias"] });
       queryClient.invalidateQueries({
-        queryKey: asistenciaKeys.empleado(variables.empleadoId),
+        queryKey: asistenciaKeys.empleado(empleadoIdString),
       });
       queryClient.invalidateQueries({
-        queryKey: asistenciaKeys.hoy(variables.empleadoId),
+        queryKey: asistenciaKeys.hoy(empleadoIdString),
       });
       toast.success("✅ Asistencia registrada correctamente", {
         position: "top-right",
@@ -30,6 +39,7 @@ export const useAsistenciaMutations = () => {
       });
     },
     onError: (error: Error) => {
+      console.error("❌ useAsistenciaMutations - Error:", error);
       toast.error(error.message || "Error al registrar asistencia", {
         position: "top-right",
         autoClose: 4000,
