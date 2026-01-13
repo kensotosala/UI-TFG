@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Lock, Mail, Eye, EyeOff, Shield } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 
@@ -179,8 +178,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center gap-4">
+                {/* <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
                     checked={rememberMe}
@@ -195,7 +194,7 @@ export default function LoginPage() {
                   >
                     Recordarme
                   </Label>
-                </div>
+                </div> */}
 
                 <Link
                   href="/forgot-password"

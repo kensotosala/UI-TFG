@@ -40,7 +40,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="p-4 flex items-center justify-between sticky top-0 bg-background z-50">
+    <nav className="p-4 flex items-center justify-between sticky top-0 bg-[#f8fafa] z-10">
       {/* LEFT */}
       <div className="flex items-center gap-4">
         <SidebarTrigger />
