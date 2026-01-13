@@ -1,95 +1,78 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
-
-import { useToast } from "@/hooks/use-toast";
 import { empleadoService } from "../services/empleados.service";
-import { Empleado } from "../types";
-
-interface UpdateEmpleadoPayload {
-  id: number;
-  data: Partial<Empleado>;
-}
+import { EmpleadoCreateDTO, Empleado } from "../types";
+import { toast } from "react-toastify";
 
 export const useEmpleadoMutations = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
-  const invalidateEmpleados = () => {
-    queryClient.invalidateQueries({ queryKey: ["empleados"] });
-  };
-
-  // Crear empleado
-  const createMutation = useMutation({
-    mutationFn: empleadoService.create,
+  const createEmpleado = useMutation({
+    mutationFn: (data: EmpleadoCreateDTO) => empleadoService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["empleados"] });
-      toast({
-        title: "Éxito",
-        description: "Empleado creado correctamente",
-        variant: "default",
+      toast.success("✅ Empleado creado correctamente", {
+        position: "top-right",
+        autoClose: 3000,
       });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description:
-          error.response?.data?.message || "Error al crear el empleado",
-        variant: "destructive",
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al crear el empleado", {
+        position: "top-right",
+        autoClose: 4000,
       });
     },
   });
 
-  // Actualizar empleado
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: UpdateEmpleadoPayload) =>
+  const updateEmpleado = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Empleado> }) =>
       empleadoService.update(id, data),
     onSuccess: () => {
-      invalidateEmpleados();
-      toast({
-        title: "Éxito",
-        description: "Empleado actualizado correctamente",
+      queryClient.invalidateQueries({ queryKey: ["empleados"] });
+      toast.success("✅ Empleado actualizado correctamente", {
+        position: "top-right",
+        autoClose: 3000,
       });
     },
-    onError: (error: AxiosError<any>) => {
-      toast({
-        title: "Error",
-        description:
-          error.response?.data?.message ?? "Error al actualizar el empleado",
-        variant: "destructive",
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al actualizar el empleado", {
+        position: "top-right",
+        autoClose: 4000,
       });
     },
   });
 
-  // Eliminar empleado
-  const deleteMutation = useMutation({
+  const deleteEmpleado = useMutation({
     mutationFn: (id: number) => empleadoService.delete(id),
     onSuccess: () => {
-      invalidateEmpleados();
-      toast({
-        title: "Éxito",
-        description: "Empleado eliminado correctamente",
+      queryClient.invalidateQueries({ queryKey: ["empleados"] });
+      toast.success("✅ Empleado eliminado correctamente", {
+        position: "top-right",
+        autoClose: 3000,
       });
     },
-    onError: (error: AxiosError<any>) => {
-      toast({
-        title: "Error",
-        description:
-          error.response?.data?.message ?? "Error al eliminar el empleado",
-        variant: "destructive",
+    onError: (error: Error) => {
+      // Remover el emoji si ya viene en el mensaje
+      const message = error.message.startsWith("❌")
+        ? error.message
+        : `${error.message}`;
+
+      toast.error(message, {
+        position: "top-center",
+        autoClose: 6000, // Más tiempo para mensajes largos
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
     },
   });
 
   return {
-    createEmpleado: createMutation.mutateAsync,
-    updateEmpleado: updateMutation.mutateAsync,
-    deleteEmpleado: deleteMutation.mutateAsync,
-
-    isCreating: createMutation.isPending,
-    isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
+    createEmpleado: createEmpleado.mutateAsync,
+    updateEmpleado: updateEmpleado.mutateAsync,
+    deleteEmpleado: deleteEmpleado.mutateAsync,
+    isCreating: createEmpleado.isPending,
+    isUpdating: updateEmpleado.isPending,
+    isDeleting: deleteEmpleado.isPending,
   };
 };

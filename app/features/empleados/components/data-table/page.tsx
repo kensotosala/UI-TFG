@@ -74,7 +74,7 @@ export function EmpleadosTable() {
       setSelectedEmpleado(null);
       refetch();
     } catch (error) {
-      console.error("Error al eliminar empleado:", error);
+      console.log("Error al eliminar empleado:", error);
     }
   };
 
