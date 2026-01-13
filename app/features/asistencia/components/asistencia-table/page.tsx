@@ -210,8 +210,7 @@ export function AsistenciasTable() {
           if (!open) setSelectedAsistencia(null);
         }}
         asistencia={selectedAsistencia}
-        onSave={handleEdit}
-        isLoading={isUpdating}
+        onUpdate={handleEdit}
       />
 
       <AsistenciaDeleteDialog

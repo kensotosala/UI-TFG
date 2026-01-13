@@ -1,3 +1,5 @@
+// services/asistenciaService.ts - CORREGIDO PARA UPDATE
+
 import axios, { AxiosError } from "axios";
 import {
   ActualizarAsistenciaDTO,
@@ -88,9 +90,9 @@ const transformBackendToFrontend = (
     nombre: backend.nombreEmpleado.split(" ")[0] || "",
     apellido: backend.nombreEmpleado.split(" ").slice(1).join(" ") || "",
     nombreCompleto: backend.nombreEmpleado,
-    email: "", // No viene del backend
-    departamento: "", // No viene del backend
-    cargo: "", // No viene del backend
+    email: "",
+    departamento: "",
+    cargo: "",
   };
 
   return {
@@ -134,11 +136,7 @@ export const asistenciaService = {
         `${API_BASE_URL}/Asistencias?${params.toString()}`
       );
 
-      console.log("✅ Backend data:", data);
-
       const transformedData = data.map(transformBackendToFrontend);
-
-      console.log("✅ Transformed data:", transformedData);
 
       return {
         data: transformedData,
@@ -191,25 +189,21 @@ export const asistenciaService = {
 
   /**
    * Crear nueva asistencia
-   * ✅ CORREGIDO: Usa API_BASE_URL y maneja correctamente los tipos
    */
   create: async (data: CrearAsistenciaDTO): Promise<Asistencia> => {
     try {
-      // 1. Validar datos requeridos
       if (!data.empleadoId || !data.fechaRegistro || !data.estado) {
         throw new Error(
           "Faltan datos requeridos: empleadoId, fechaRegistro y estado son obligatorios"
         );
       }
 
-      // 2. Preparar payload base
       const payload: Record<string, unknown> = {
-        empleadoId: Number(data.empleadoId), // ✅ Asegurar que sea número
+        empleadoId: Number(data.empleadoId),
         fechaRegistro: formatDateForBackend(data.fechaRegistro),
         estado: data.estado,
       };
 
-      // 3. Agregar horaEntrada solo si existe
       if (data.horaEntrada) {
         const horaFormateada = data.horaEntrada.includes("T")
           ? formatTimeForBackend(data.horaEntrada)
@@ -221,7 +215,6 @@ export const asistenciaService = {
         );
       }
 
-      // 4. Agregar horaSalida solo si existe
       if (data.horaSalida) {
         const horaFormateada = data.horaSalida.includes("T")
           ? formatTimeForBackend(data.horaSalida)
@@ -233,15 +226,14 @@ export const asistenciaService = {
         );
       }
 
-      console.log("📤 Payload enviado al backend:", payload);
+      console.log("📤 Payload enviado al backend (CREATE):", payload);
 
-      // 5. ✅ CORREGIDO: Usar API_BASE_URL en lugar de API_URL
       const response = await axios.post<Asistencia>(
         `${API_BASE_URL}/Asistencias`,
         payload
       );
 
-      console.log("✅ Respuesta del backend:", response.data);
+      console.log("✅ Respuesta del backend (CREATE):", response.data);
 
       return response.data;
     } catch (error) {
@@ -252,18 +244,66 @@ export const asistenciaService = {
 
   /**
    * Actualizar asistencia existente
+   * ✅ CORREGIDO: Ahora envía TODOS los campos requeridos por el backend
    */
   update: async (
     id: string,
-    asistencia: ActualizarAsistenciaDTO
+    data: ActualizarAsistenciaDTO
   ): Promise<Asistencia> => {
     try {
-      const { data } = await axios.put<Asistencia>(
+      // ✅ CRÍTICO: Obtener la asistencia actual para todos los campos base
+      const asistenciaActual = await asistenciaService.getById(id);
+      const fechaBase = asistenciaActual.fecha; // "2026-01-13"
+
+      // ✅ CRÍTICO: El backend requiere TODOS estos campos
+      const payload: Record<string, unknown> = {
+        empleadoId: Number(asistenciaActual.empleadoId), // ✅ Requerido
+        fechaRegistro: fechaBase, // ✅ Requerido
+        estado: data.estado || asistenciaActual.estado, // ✅ Requerido
+      };
+
+      // ✅ Formatear horaEntrada correctamente
+      if (data.horaEntrada && data.horaEntrada.trim() !== "") {
+        const horaFormateada = data.horaEntrada.includes("T")
+          ? formatTimeForBackend(data.horaEntrada)
+          : data.horaEntrada;
+
+        payload.horaEntrada = combinarFechaHora(fechaBase, horaFormateada);
+      } else if (asistenciaActual.horaEntrada) {
+        // ✅ Si no se proporciona nueva hora, mantener la actual
+        payload.horaEntrada = combinarFechaHora(
+          fechaBase,
+          asistenciaActual.horaEntrada
+        );
+      }
+
+      // ✅ Formatear horaSalida correctamente
+      if (data.horaSalida && data.horaSalida.trim() !== "") {
+        const horaFormateada = data.horaSalida.includes("T")
+          ? formatTimeForBackend(data.horaSalida)
+          : data.horaSalida;
+
+        payload.horaSalida = combinarFechaHora(fechaBase, horaFormateada);
+      } else if (asistenciaActual.horaSalida) {
+        // ✅ Si no se proporciona nueva hora, mantener la actual
+        payload.horaSalida = combinarFechaHora(
+          fechaBase,
+          asistenciaActual.horaSalida
+        );
+      }
+
+      console.log("📤 Payload enviado al backend (UPDATE):", payload);
+
+      const response = await axios.put<Asistencia>(
         `${API_BASE_URL}/Asistencias/${id}`,
-        asistencia
+        payload
       );
-      return data;
+
+      console.log("✅ Respuesta del backend (UPDATE):", response.data);
+
+      return response.data;
     } catch (error) {
+      console.error("❌ Error al actualizar asistencia:", error);
       return handleApiError(error);
     }
   },
@@ -297,7 +337,7 @@ export const asistenciaService = {
   },
 
   /**
-   * Cambiar estado de asistencia (presente, ausente, justificado, etc.)
+   * Cambiar estado de asistencia
    */
   cambiarEstado: async (
     id: string,
@@ -373,7 +413,7 @@ export const asistenciaService = {
   },
 
   /**
-   * Obtener resumen general (todos los empleados)
+   * Obtener resumen general
    */
   getResumenGeneral: async (
     fechaInicio: string,
@@ -395,7 +435,7 @@ export const asistenciaService = {
   },
 
   /**
-   * Exportar asistencias a Excel/PDF
+   * Exportar asistencias
    */
   exportar: async (
     formato: "excel" | "pdf",
@@ -421,7 +461,7 @@ export const asistenciaService = {
   },
 
   /**
-   * Obtener asistencia del día actual para un empleado
+   * Obtener asistencia del día actual
    */
   getAsistenciaHoy: async (
     empleadoId: string
@@ -433,7 +473,7 @@ export const asistenciaService = {
       return transformBackendToFrontend(data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
-        return null; // No hay asistencia registrada hoy
+        return null;
       }
       return handleApiError(error);
     }

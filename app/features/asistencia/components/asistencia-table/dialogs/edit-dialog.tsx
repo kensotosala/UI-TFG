@@ -1,15 +1,15 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 // components/asistencias/AsistenciaEditDialog.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,201 +20,249 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   ActualizarAsistenciaDTO,
   AsistenciaDetallada,
   EstadoAsistencia,
 } from "../../../types";
-import { useEffect, useState } from "react";
-import { Separator } from "@radix-ui/react-separator";
 import { Clock } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 
 interface AsistenciaEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUpdate: (id: string, data: ActualizarAsistenciaDTO) => Promise<void>;
   asistencia: AsistenciaDetallada | null;
-  onSave: (id: string, data: ActualizarAsistenciaDTO) => void;
-  isLoading: boolean;
 }
-
-type FormErrors = {
-  horaEntrada?: string;
-  horaSalida?: string;
-  estado?: string;
-};
 
 export function AsistenciaEditDialog({
   open,
   onOpenChange,
+  onUpdate,
   asistencia,
-  onSave,
-  isLoading,
 }: AsistenciaEditDialogProps) {
-  const [form, setForm] = useState<ActualizarAsistenciaDTO>({});
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [formData, setFormData] = useState<ActualizarAsistenciaDTO>({
+    horaEntrada: "",
+    horaSalida: "",
+    estado: EstadoAsistencia.PRESENTE,
+    observaciones: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ✅ Cargar datos de la asistencia cuando cambie o se abra el diálogo
   useEffect(() => {
-    if (asistencia) {
-      setForm({
+    if (asistencia && open) {
+      console.log("📋 Cargando datos de asistencia:", asistencia);
+      setFormData({
         horaEntrada: asistencia.horaEntrada || "",
         horaSalida: asistencia.horaSalida || "",
         estado: asistencia.estado,
         observaciones: asistencia.observaciones || "",
       });
-      setErrors({});
     }
-  }, [asistencia]);
-
-  if (!asistencia) return null;
-
-  const validate = (data: ActualizarAsistenciaDTO): FormErrors => {
-    const newErrors: FormErrors = {};
-
-    // Validar que la hora de salida sea posterior a la de entrada
-    if (data.horaEntrada && data.horaSalida) {
-      const entrada = new Date(`2000-01-01T${data.horaEntrada}`);
-      const salida = new Date(`2000-01-01T${data.horaSalida}`);
-
-      if (salida <= entrada) {
-        newErrors.horaSalida =
-          "La hora de salida debe ser posterior a la entrada";
-      }
-    }
-
-    return newErrors;
-  };
+  }, [asistencia, open]);
 
   const handleChange = <K extends keyof ActualizarAsistenciaDTO>(
     field: K,
     value: ActualizarAsistenciaDTO[K]
   ) => {
-    const updated = { ...form, [field]: value };
-    setForm(updated);
-    setErrors(validate(updated));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    const validationErrors = validate(form);
-    setErrors(validationErrors);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    if (Object.keys(validationErrors).length === 0) {
-      onSave(asistencia.id, form);
+    if (!asistencia) {
+      alert("No hay asistencia seleccionada");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // ✅ MEJORADO: Construir payload dinámicamente
+      const payload: ActualizarAsistenciaDTO = {};
+
+      // ✅ Siempre incluir estado (es requerido en el backend)
+      payload.estado = formData.estado;
+
+      // ✅ IMPORTANTE: Solo incluir horaEntrada si tiene valor
+      // Si el campo está vacío, NO lo enviamos (el backend mantendrá el valor actual)
+      if (formData.horaEntrada && formData.horaEntrada.trim() !== "") {
+        payload.horaEntrada = formData.horaEntrada.trim();
+      }
+
+      // ✅ IMPORTANTE: Solo incluir horaSalida si tiene valor
+      if (formData.horaSalida && formData.horaSalida.trim() !== "") {
+        payload.horaSalida = formData.horaSalida.trim();
+      }
+
+      // ✅ Solo incluir observaciones si existen
+      if (formData.observaciones && formData.observaciones.trim() !== "") {
+        payload.observaciones = formData.observaciones.trim();
+      }
+
+      console.log("📝 Datos de actualización (FORM):", payload);
+
+      await onUpdate(asistencia.id, payload);
+
+      // ✅ Cerrar el diálogo después de actualizar exitosamente
+      onOpenChange(false);
+    } catch (error) {
+      console.error("❌ Error en handleSubmit:", error);
+      // El error ya se muestra en el toast desde el hook
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const hasErrors = Object.keys(errors).length > 0;
+  // ✅ No renderizar si no hay asistencia
+  if (!asistencia) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Editar Asistencia</DialogTitle>
+          <DialogTitle className="mb-2">Editar Asistencia</DialogTitle>
+          <Separator />
         </DialogHeader>
 
-        <div className="space-y-5">
-          {/* Información del Empleado (solo lectura) */}
-          <div className="bg-gray-50 p-3 rounded-md">
-            <p className="text-sm text-muted-foreground">Empleado</p>
-            <p className="font-medium">{asistencia.empleado.nombreCompleto}</p>
-            <p className="text-xs text-gray-500">
-              {asistencia.empleado.departamento}
-            </p>
-          </div>
-
-          <Separator />
-
-          {/* Horas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="horaEntrada">Hora de Entrada</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input
-                  id="horaEntrada"
-                  type="time"
-                  value={form.horaEntrada || ""}
-                  onChange={(e) => handleChange("horaEntrada", e.target.value)}
-                  className="pl-10"
-                />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
+            {/* Información del Empleado (Solo lectura) */}
+            <div className="bg-muted p-4 rounded-md">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="font-semibold">Empleado:</span>
+                  <p className="text-muted-foreground">
+                    {asistencia.empleado.nombreCompleto}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-semibold">Fecha:</span>
+                  <p className="text-muted-foreground">{asistencia.fecha}</p>
+                </div>
               </div>
-              {errors.horaEntrada && (
-                <p className="text-sm text-red-500">{errors.horaEntrada}</p>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="horaSalida">Hora de Salida</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input
-                  id="horaSalida"
-                  type="time"
-                  value={form.horaSalida || ""}
-                  onChange={(e) => handleChange("horaSalida", e.target.value)}
-                  className="pl-10"
-                />
+            {/* Horas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="horaEntrada" className="mb-2">
+                  Hora de Entrada
+                </Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <Input
+                    id="horaEntrada"
+                    type="time"
+                    step="1"
+                    value={formData.horaEntrada || ""}
+                    onChange={(e) =>
+                      handleChange("horaEntrada", e.target.value)
+                    }
+                    className="pl-10"
+                  />
+                </div>
+                {asistencia.horaEntrada && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Actual: {asistencia.horaEntrada}
+                  </p>
+                )}
               </div>
-              {errors.horaSalida && (
-                <p className="text-sm text-red-500">{errors.horaSalida}</p>
-              )}
+
+              <div>
+                <Label htmlFor="horaSalida" className="mb-2">
+                  Hora de Salida
+                </Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <Input
+                    id="horaSalida"
+                    type="time"
+                    step="1"
+                    value={formData.horaSalida || ""}
+                    onChange={(e) => handleChange("horaSalida", e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                {asistencia.horaSalida && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Actual: {asistencia.horaSalida}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Estado */}
+            <div>
+              <Label htmlFor="estado" className="mb-2">
+                Estado *
+              </Label>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) =>
+                  handleChange("estado", value as EstadoAsistencia)
+                }
+                required
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona un estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Estados</SelectLabel>
+                    {Object.values(EstadoAsistencia).map((estado) => (
+                      <SelectItem key={estado} value={estado}>
+                        {estado.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Observaciones */}
+            <div>
+              <Label htmlFor="observaciones" className="mb-2">
+                Observaciones
+              </Label>
+              <Textarea
+                id="observaciones"
+                value={formData.observaciones || ""}
+                onChange={(e) => handleChange("observaciones", e.target.value)}
+                placeholder="Agregar comentarios adicionales..."
+                rows={3}
+              />
             </div>
           </div>
 
-          {/* Estado */}
-          <div className="space-y-2">
-            <Label htmlFor="estado">Estado</Label>
-            <Select
-              value={form.estado}
-              onValueChange={(value) =>
-                handleChange("estado", value as EstadoAsistencia)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecciona un estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Estados</SelectLabel>
-                  {Object.values(EstadoAsistencia).map((estado) => (
-                    <SelectItem key={estado} value={estado}>
-                      {estado}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            {errors.estado && (
-              <p className="text-sm text-red-500">{errors.estado}</p>
-            )}
-          </div>
-
-          {/* Observaciones */}
-          <div className="space-y-2">
-            <Label htmlFor="observaciones">Observaciones</Label>
-            <Textarea
-              id="observaciones"
-              value={form.observaciones || ""}
-              onChange={(e) => handleChange("observaciones", e.target.value)}
-              placeholder="Agregar comentarios adicionales..."
-              rows={3}
-            />
-          </div>
-
-          {/* Acciones */}
           <div className="flex justify-end gap-2 pt-4">
             <Button
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
+              type="button"
+              variant="outline"
+              onClick={() => {
+                // Resetear formulario al cerrar
+                setFormData({
+                  horaEntrada: "",
+                  horaSalida: "",
+                  estado: EstadoAsistencia.PRESENTE,
+                  observaciones: "",
+                });
+                onOpenChange(false);
+              }}
+              disabled={isSubmitting}
             >
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={hasErrors || isLoading}>
-              {isLoading ? "Guardando..." : "Guardar cambios"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Actualizando..." : "Actualizar Asistencia"}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
