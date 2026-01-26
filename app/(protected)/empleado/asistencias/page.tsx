@@ -1,9 +1,9 @@
-import { AsistenciasTable } from "@/app/features/asistencia/components/asistencia-table/page";
+import { AsistenciasEmpleadoTable } from "@/app/features/viewEmpleado/asistencia-empleado/components/asistencia-empleado-table/data-table";
 
 const AsistenciaPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
-      <AsistenciasTable />
+      <AsistenciasEmpleadoTable />
     </div>
   );
 };

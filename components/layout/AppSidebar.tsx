@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   ChevronUp,
   Clock,
+  HeartPulse,
   Home,
   Key,
   PlaneIcon,
@@ -117,6 +118,11 @@ const empleadoMenuGroups = [
         title: "Mis Permisos",
         url: "/empleado/permisos",
         icon: Key,
+      },
+      {
+        title: "Mis Incapacidades",
+        url: "/empleado/asistencias",
+        icon: HeartPulse,
       },
       {
         title: "Mis Vacaciones",

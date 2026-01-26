@@ -1,9 +1,16 @@
 "use client";
 
+import { MarcarAsistenciaCard } from "@/app/features/viewEmpleado/asistencia-empleado/components/MarcarAsistenciaCard";
+
 export default function EmpleadoDashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-semibold mb-6">Mi Portal</h1>
+
+      <div className="mb-6 max-w-full">
+        <MarcarAsistenciaCard />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <a
           href="/empleado/asistencias"
