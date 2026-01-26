@@ -47,11 +47,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Función mejorada para validar y cargar usuario
   const loadUserFromToken = useCallback(() => {
     const token = authService.getToken();
 
-    // Validación explícita: debe existir token Y ser válido
     if (!token) {
       setUser(null);
       return false;
@@ -59,14 +57,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (!authService.isAuthenticated()) {
       setUser(null);
-      authService.logout(); // Limpia token inválido
+      authService.logout();
       return false;
     }
 
     const userData = authService.decodeJWT(token);
     if (!userData) {
       setUser(null);
-      authService.logout(); // Limpia token corrupto
+      authService.logout();
       return false;
     }
 
@@ -74,13 +72,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return true;
   }, []);
 
-  // Inicialización
   useEffect(() => {
     const initializeAuth = () => {
       const hasValidAuth = loadUserFromToken();
       setIsLoading(false);
 
-      // Redirigir inmediatamente si no hay autenticación válida
       if (!hasValidAuth && !PUBLIC_ROUTES.includes(pathname || "")) {
         router.replace("/login");
       }
@@ -89,14 +85,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initializeAuth();
   }, [loadUserFromToken, pathname, router]);
 
-  // Sincronización entre pestañas
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      // Solo reaccionar si cambió el token
       if (e.key === "authToken" || e.key === null) {
         const hasValidAuth = loadUserFromToken();
 
-        // Si se eliminó el token, redirigir a login
         if (!hasValidAuth && !PUBLIC_ROUTES.includes(pathname || "")) {
           router.replace("/login");
         }
@@ -107,27 +100,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [loadUserFromToken, pathname, router]);
 
-  // Protección de rutas - useEffect separado y simplificado
   useEffect(() => {
     if (isLoading) return;
 
     const isPublicRoute = PUBLIC_ROUTES.some(
-      (route) => pathname === route || pathname?.startsWith(`${route}/`)
+      (route) => pathname === route || pathname?.startsWith(`${route}/`),
     );
 
     const token = authService.getToken();
     const isValidAuth = token && authService.isAuthenticated();
 
-    // Caso 1: Ruta privada sin autenticación válida -> Login
     if (!isPublicRoute && !isValidAuth) {
       router.replace("/login");
       return;
     }
 
-    // Caso 2: Usuario autenticado en página de login -> Dashboard
     if (pathname === "/login" && isValidAuth) {
-      router.replace("/");
+      const userData = authService.decodeJWT(token!);
+      const userRole = userData?.roles[0];
+
+      if (userRole === "ADMIN") {
+        router.replace("/admin");
+      } else if (userRole === "EMPLEADO") {
+        router.replace("/empleado");
+      }
       return;
+    }
+
+    if (isValidAuth && user) {
+      const userRole = user.roles[0];
+
+      if (pathname?.startsWith("/admin") && userRole !== "ADMIN") {
+        router.replace("/empleado");
+        return;
+      }
+
+      if (pathname?.startsWith("/empleado") && userRole !== "EMPLEADO") {
+        router.replace("/admin");
+        return;
+      }
     }
   }, [pathname, isLoading, router, user]);
 
@@ -138,7 +149,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const success = loadUserFromToken();
 
       if (success) {
-        router.replace("/");
+        const userData = authService.decodeJWT(authService.getToken()!);
+        const userRole = userData?.roles[0];
+
+        if (userRole === "ADMIN") {
+          router.replace("/admin");
+        } else if (userRole === "EMPLEADO") {
+          router.replace("/empleado");
+        } else {
+          router.replace("/");
+        }
       } else {
         throw new Error("Error al cargar datos del usuario");
       }

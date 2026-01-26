@@ -11,7 +11,6 @@ import {
   PlaneIcon,
   Stethoscope,
   User2,
-  Users2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,13 +36,13 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-const menuGroups = [
+const adminMenuGroups = [
   {
     label: "Principal",
     items: [
       {
         title: "Dashboard",
-        url: "/",
+        url: "/admin",
         icon: Home,
       },
     ],
@@ -52,18 +51,13 @@ const menuGroups = [
     label: "Administración",
     items: [
       {
-        title: "Usuarios",
-        url: "/usuarios",
-        icon: Users2,
-      },
-      {
         title: "Departamentos",
-        url: "/departamentos",
+        url: "/admin/departamentos",
         icon: Building2,
       },
       {
         title: "Puestos",
-        url: "/puestos",
+        url: "/admin/puestos",
         icon: Briefcase,
       },
     ],
@@ -73,32 +67,60 @@ const menuGroups = [
     items: [
       {
         title: "Empleados",
-        url: "/empleados",
+        url: "/admin/empleados",
         icon: User2,
       },
       {
         title: "Asistencias",
-        url: "/asistencias",
+        url: "/admin/asistencias",
         icon: CalendarCheck,
       },
       {
         title: "Horas Extra",
-        url: "/horas-extra",
+        url: "/admin/horas-extra",
         icon: Clock,
       },
       {
         title: "Permisos",
-        url: "/permisos",
+        url: "/admin/permisos",
         icon: Key,
       },
       {
         title: "Incapacidades",
-        url: "/incapacidades",
+        url: "/admin/incapacidades",
         icon: Stethoscope,
       },
       {
         title: "Vacaciones",
-        url: "/vacaciones",
+        url: "/admin/vacaciones",
+        icon: PlaneIcon,
+      },
+    ],
+  },
+];
+
+const empleadoMenuGroups = [
+  {
+    label: "Mi Portal",
+    items: [
+      {
+        title: "Inicio",
+        url: "/empleado",
+        icon: Home,
+      },
+      {
+        title: "Mis Asistencias",
+        url: "/empleado/asistencias",
+        icon: CalendarCheck,
+      },
+      {
+        title: "Mis Permisos",
+        url: "/empleado/permisos",
+        icon: Key,
+      },
+      {
+        title: "Mis Vacaciones",
+        url: "/empleado/vacaciones",
         icon: PlaneIcon,
       },
     ],
@@ -106,7 +128,9 @@ const menuGroups = [
 ];
 
 export function AppSidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const isAdmin = user?.roles?.includes("ADMIN");
+  const menuGroups = isAdmin ? adminMenuGroups : empleadoMenuGroups;
 
   return (
     <Sidebar collapsible="icon">
@@ -114,7 +138,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/">
+              <Link href={isAdmin ? "/admin" : "/empleado"}>
                 <Image src="/next.svg" alt="logo" width={20} height={20} />
                 <span>All Sport Nutrition</span>
               </Link>
@@ -160,8 +184,9 @@ export function AppSidebar() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Cuenta</DropdownMenuItem>
                 <DropdownMenuItem>Configuración</DropdownMenuItem>
-                <DropdownMenuItem>Equipo</DropdownMenuItem>
-                <DropdownMenuItem>Cerrar sesión</DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  Cerrar sesión
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
