@@ -121,7 +121,7 @@ const empleadoMenuGroups = [
       },
       {
         title: "Mis Incapacidades",
-        url: "/empleado/asistencias",
+        url: "/empleado/incapacidades",
         icon: HeartPulse,
       },
       {
