@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, DollarSign, Ban } from "lucide-react";
+import { MoreHorizontal, Eye, Ban, ArrowUpDown } from "lucide-react";
 import { NominaDTO } from "../../nomina.types";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 
 const getEstadoBadge = (estado?: string) => {
   const estadoUpper = estado?.toUpperCase() || "PENDIENTE";
@@ -24,10 +24,6 @@ const getEstadoBadge = (estado?: string) => {
     PENDIENTE: {
       variant: "secondary",
       className: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    },
-    PAGADA: {
-      variant: "default",
-      className: "bg-green-100 text-green-800 border-green-300",
     },
     ANULADA: {
       variant: "destructive",
@@ -46,12 +42,57 @@ const getEstadoBadge = (estado?: string) => {
 
 export const columns = (
   onVer: (nomina: NominaDTO) => void,
-  onPagar: (nomina: NominaDTO) => void,
   onAnular: (nomina: NominaDTO) => void,
 ): ColumnDef<NominaDTO>[] => [
   {
+    accessorKey: "periodoNomina",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Período
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const fecha = row.original.periodoNomina;
+      if (!fecha) return "-";
+      try {
+        const parsed = parseISO(fecha.toString());
+        const dia = parsed.getDate();
+        const quincena = dia <= 15 ? "1ª" : "2ª";
+        return (
+          <div>
+            <div className="font-medium">{quincena} Quincena</div>
+            <div className="text-xs text-muted-foreground">
+              {format(parsed, "MMMM yyyy", { locale: es })}
+            </div>
+          </div>
+        );
+      } catch {
+        return "-";
+      }
+    },
+    sortingFn: (rowA, rowB, columnId) => {
+      const dateA = new Date(rowA.getValue(columnId) as string);
+      const dateB = new Date(rowB.getValue(columnId) as string);
+      return dateA.getTime() - dateB.getTime();
+    },
+  },
+  {
     accessorKey: "nombreEmpleado",
-    header: "Empleado",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Empleado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => (
       <div>
         <div className="font-medium">{row.original.nombreEmpleado}</div>
@@ -77,93 +118,157 @@ export const columns = (
   },
   {
     accessorKey: "salarioBase",
-    header: "Salario Base",
+    header: ({ column }) => (
+      <div className="text-right">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent"
+        >
+          Salario Base
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ row }) => (
       <div className="text-right font-mono text-sm">
-        ₡{row.original.salarioBase.toLocaleString("es-CR")}
+        ₡
+        {row.original.salarioBase.toLocaleString("es-CR", {
+          maximumFractionDigits: 0,
+        })}
       </div>
     ),
   },
   {
     accessorKey: "totalBruto",
-    header: "Total Bruto",
+    header: ({ column }) => (
+      <div className="text-right">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent"
+        >
+          Total Bruto
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ row }) => (
-      <div className="text-right font-mono text-sm font-semibold">
-        ₡{row.original.totalBruto.toLocaleString("es-CR")}
+      <div className="text-right font-mono text-sm font-semibold text-green-700">
+        ₡
+        {row.original.totalBruto.toLocaleString("es-CR", {
+          maximumFractionDigits: 0,
+        })}
       </div>
     ),
   },
   {
     accessorKey: "deducciones",
-    header: "Deducciones",
+    header: ({ column }) => (
+      <div className="text-right">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent"
+        >
+          Deducciones
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ row }) => (
       <div className="text-right font-mono text-sm text-red-600">
-        ₡{(row.original.deducciones || 0).toLocaleString("es-CR")}
+        -₡
+        {(row.original.deducciones || 0).toLocaleString("es-CR", {
+          maximumFractionDigits: 0,
+        })}
       </div>
     ),
   },
   {
     accessorKey: "totalNeto",
-    header: "Total Neto",
+    header: ({ column }) => (
+      <div className="text-right">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent"
+        >
+          Total Neto
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ row }) => (
-      <div className="text-right font-mono text-sm font-bold text-green-700">
-        ₡{row.original.totalNeto.toLocaleString("es-CR")}
+      <div className="text-right font-mono text-sm font-bold text-purple-700">
+        ₡
+        {row.original.totalNeto.toLocaleString("es-CR", {
+          maximumFractionDigits: 0,
+        })}
       </div>
     ),
   },
   {
     accessorKey: "estado",
-    header: "Estado",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Estado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => getEstadoBadge(row.original.estado),
   },
   {
     id: "acciones",
-    header: "Acciones",
+    header: () => <div className="text-center">Acciones</div>,
     cell: ({ row }) => {
       const nomina = row.original;
       const isPendiente = nomina.estado?.toUpperCase() === "PENDIENTE";
-      const isPagada = nomina.estado?.toUpperCase() === "PAGADA";
+      const isAnulada = nomina.estado?.toUpperCase() === "ANULADA";
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onVer(nomina)}>
-              <Eye className="mr-2 h-4 w-4" />
-              Ver detalles
-            </DropdownMenuItem>
+        <div className="flex justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menú</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+              <DropdownMenuSeparator />
 
-            {isPendiente && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onPagar(nomina)}>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Pagar nómina
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onAnular(nomina)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Ban className="mr-2 h-4 w-4" />
-                  Anular nómina
-                </DropdownMenuItem>
-              </>
-            )}
-
-            {isPagada && (
-              <DropdownMenuItem disabled className="text-muted-foreground">
-                Nómina ya pagada
+              <DropdownMenuItem onClick={() => onVer(nomina)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver detalles
               </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+              {isPendiente && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onAnular(nomina)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Anular nómina
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {isAnulada && (
+                <DropdownMenuItem disabled className="text-muted-foreground">
+                  Nómina anulada
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       );
     },
   },

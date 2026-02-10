@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+// app/features/nomina/hooks/useNomina.ts
 
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   GenerarNominaQuincenalDTO,
@@ -78,32 +79,6 @@ export function useNomina(quincena?: number, mes?: number, anio?: number) {
     }
   };
 
-  const aprobarNomina = async (id: number) => {
-    try {
-      await nominaService.aprobarNomina(id);
-      toast.success("Nómina aprobada");
-      await loadData();
-    } catch (error: any) {
-      toast.error("Error al aprobar nómina", {
-        description: error.message,
-      });
-      throw error;
-    }
-  };
-
-  const pagarNomina = async (id: number) => {
-    try {
-      await nominaService.pagarNomina(id);
-      toast.success("Nómina pagada correctamente");
-      await loadData();
-    } catch (error: any) {
-      toast.error("Error al pagar nómina", {
-        description: error.message,
-      });
-      throw error;
-    }
-  };
-
   const anularNomina = async (id: number) => {
     setIsDeleting(true);
     try {
@@ -130,8 +105,6 @@ export function useNomina(quincena?: number, mes?: number, anio?: number) {
     isDeleting,
     refetch,
     generarNomina,
-    aprobarNomina,
-    pagarNomina,
     anularNomina,
   };
 }
