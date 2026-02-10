@@ -86,7 +86,7 @@ export function AsistenciasTable() {
       tipo: string;
       descripcion: string;
       documentoUrl?: string;
-    }
+    },
   ) => {
     try {
       await justificarAsistencia({ id, justificacion });
@@ -132,7 +132,7 @@ export function AsistenciasTable() {
     handleEditar,
     handleEliminar,
     handleJustificarClick,
-    handleAprobar
+    handleAprobar,
   );
 
   if (isLoading) {
@@ -175,7 +175,6 @@ export function AsistenciasTable() {
         onAddClick={() => setOpenCreate(true)}
       />
 
-      {/* ✅ SIN filterColumn y filterPlaceholder */}
       <DataTable columns={tableColumns} data={asistencias} />
 
       {/* DIÁLOGOS */}
@@ -219,7 +218,11 @@ export function AsistenciasTable() {
           if (!open) setSelectedAsistencia(null);
         }}
         asistenciaId={selectedAsistencia?.id || ""}
-        empleadoNombre={selectedAsistencia?.empleado.nombreCompleto || ""}
+        empleadoNombre={
+          typeof selectedAsistencia?.empleado === "string"
+            ? selectedAsistencia.empleado
+            : selectedAsistencia?.empleado?.nombre || ""
+        }
         onSave={handleJustificar}
         isLoading={isUpdating}
       />

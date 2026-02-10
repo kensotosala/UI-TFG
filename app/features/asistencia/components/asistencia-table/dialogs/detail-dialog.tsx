@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/asistencias/AsistenciaDetailsDialog.tsx
+
 "use client";
 
 import {
@@ -23,6 +23,9 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { AsistenciaDetallada, EstadoAsistencia } from "../../../types";
+import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
+import { useDepartamentos } from "@/app/features/departamentos/hooks/useDepartamentos";
+import { usePuestos } from "@/app/features/puestos/hooks/usePuestos";
 
 interface AsistenciaDetailsDialogProps {
   open: boolean;
@@ -89,6 +92,22 @@ export function AsistenciaDetailsDialog({
   onOpenChange,
   asistencia,
 }: AsistenciaDetailsDialogProps) {
+  const { empleados } = useEmpleados();
+  const { departamentos } = useDepartamentos();
+  const { puestos } = usePuestos();
+
+  const empleadoSeleccionado = empleados.find(
+    (emp) => emp.idEmpleado === Number(asistencia?.empleadoId),
+  );
+
+  const departamentoEmpleado = departamentos.find(
+    (dept: any) => dept.idDepartamento === empleadoSeleccionado?.departamentoId,
+  );
+
+  const puestoEmpleado = puestos.find(
+    (puesto: any) => puesto.idPuesto === empleadoSeleccionado?.puestoId,
+  );
+
   if (!asistencia) return null;
 
   const badgeConfig = getEstadoBadge(asistencia.estado);
@@ -108,14 +127,14 @@ export function AsistenciaDetailsDialog({
             <div className="grid grid-cols-2 gap-4">
               <Info
                 label="Nombre Completo"
-                value={asistencia.empleado.nombreCompleto}
+                value={empleadoSeleccionado?.nombreUsuario ?? "-"}
               />
-              <Info label="Email" value={asistencia.empleado.email} />
+              <Info label="Email" value={empleadoSeleccionado?.email} />
               <Info
                 label="Departamento"
-                value={asistencia.empleado.departamento}
+                value={departamentoEmpleado?.nombreDepartamento ?? "-"}
               />
-              <Info label="Cargo" value={asistencia.empleado.cargo} />
+              <Info label="Cargo" value={puestoEmpleado?.nombrePuesto ?? "-"} />
             </div>
           </section>
 
@@ -232,10 +251,10 @@ const Header = ({ icon: Icon, title }: { icon: any; title: string }) => (
   </div>
 );
 
-const Info = ({ label, value }: { label: string; value: string }) => (
+const Info = ({ label, value }: { label: string; value?: string }) => (
   <div>
     <p className="text-xs text-muted-foreground">{label}</p>
-    <p className="text-sm font-medium">{value}</p>
+    <p className="text-sm font-medium">{value ?? "-"}</p>
   </div>
 );
 

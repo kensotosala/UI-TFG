@@ -20,6 +20,7 @@ import {
   Trash2,
   FileText,
   CheckCircle,
+  ArrowUpDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -84,11 +85,20 @@ export const columns = (
   onEditar: (asistencia: AsistenciaDetallada) => void,
   onEliminar: (asistencia: AsistenciaDetallada) => void,
   onJustificar?: (asistencia: AsistenciaDetallada) => void,
-  onAprobar?: (asistencia: AsistenciaDetallada) => void
+  onAprobar?: (asistencia: AsistenciaDetallada) => void,
 ): ColumnDef<AsistenciaDetallada>[] => [
   {
     accessorKey: "fecha",
-    header: "Fecha",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="px-0"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Fecha
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const fecha = getValue<string>();
       return (
@@ -99,8 +109,18 @@ export const columns = (
     },
   },
   {
-    accessorKey: "empleado.nombreCompleto",
-    header: "Empleado",
+    id: "empleadoNombre",
+    accessorFn: (row) => row.empleado.nombreCompleto,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="px-0"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Empleado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const empleado = row.original.empleado;
       return (
@@ -122,7 +142,16 @@ export const columns = (
   },
   {
     accessorKey: "horaEntrada",
-    header: () => <div className="text-center">Entrada</div>,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="px-0"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Hora Entrada
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const hora = getValue<string | null>();
       return (
@@ -134,7 +163,16 @@ export const columns = (
   },
   {
     accessorKey: "horaSalida",
-    header: () => <div className="text-center">Salida</div>,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="px-0"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Hora Salida
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const hora = getValue<string | null>();
       return (
@@ -146,7 +184,16 @@ export const columns = (
   },
   {
     accessorKey: "horasTrabajadas",
-    header: () => <div className="text-center">Horas</div>,
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="px-0"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Horas Trabajadas
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => (
       <div className="text-center font-medium">
         {formatearMinutos(getValue<number>())}
@@ -155,7 +202,16 @@ export const columns = (
   },
   {
     accessorKey: "estado",
-    header: "Estado",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="px-0"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Estado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const estado = getValue<EstadoAsistencia>();
       const badgeConfig = getEstadoBadge(estado);

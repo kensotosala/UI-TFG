@@ -18,12 +18,14 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
+  ArrowUpDown,
 } from "lucide-react";
 import { Permiso, EstadoPermiso } from "../../types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { JSX } from "react";
 import { Empleado } from "@/app/features/empleados/types";
+import { isWithinInterval, parseISO } from "date-fns";
 
 /**
  * Obtener color del badge según el estado
@@ -64,20 +66,15 @@ const formatearFecha = (
   fecha: string | null | undefined,
   formato: string = "dd/MM/yyyy",
 ): JSX.Element => {
-  // Validar que la fecha existe
   if (!fecha) {
     return <span className="text-muted-foreground">—</span>;
   }
 
   try {
-    // Intentar crear la fecha
     const date = new Date(fecha);
-
-    // Validar que la fecha es válida
     if (isNaN(date.getTime())) {
       return <span className="text-destructive text-xs">Fecha inválida</span>;
     }
-
     return <>{format(date, formato, { locale: es })}</>;
   } catch (error) {
     console.error("Error formateando fecha:", fecha, error);
@@ -98,17 +95,35 @@ export const columns = (
 ): ColumnDef<Permiso>[] => [
   {
     accessorKey: "idPermiso",
-    header: "ID",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        ID
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => (
       <div className="font-medium">{getValue<number>()}</div>
     ),
   },
   {
-    accessorKey: "empleadoId",
-    header: "Empleado",
+    accessorKey: "empleadoNombre",
+    id: "empleadoNombre",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Empleado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const permiso = row.original;
-
       const emp = empleados.find((e) => e.idEmpleado === permiso.empleadoId);
 
       return (
@@ -121,21 +136,79 @@ export const columns = (
         </div>
       );
     },
+    // Habilitar filtro de texto (búsqueda)
+    filterFn: (row, columnId, filterValue: string) => {
+      const permiso = row.original;
+      const emp = empleados.find((e) => e.idEmpleado === permiso.empleadoId);
+      const nombreCompleto = emp
+        ? `${emp.nombre} ${emp.primerApellido} ${emp.segundoApellido}`.toLowerCase()
+        : "";
+      return nombreCompleto.includes(filterValue.toLowerCase());
+    },
+    // Función de ordenamiento personalizada
+    sortingFn: (rowA, rowB) => {
+      const empA = empleados.find(
+        (e) => e.idEmpleado === rowA.original.empleadoId,
+      );
+      const empB = empleados.find(
+        (e) => e.idEmpleado === rowB.original.empleadoId,
+      );
+      const nombreA = empA ? `${empA.nombre} ${empA.primerApellido}` : "";
+      const nombreB = empB ? `${empB.nombre} ${empB.primerApellido}` : "";
+      return nombreA.localeCompare(nombreB);
+    },
   },
   {
     accessorKey: "fechaSolicitud",
-    header: "Fecha Solicitud",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Fecha Solicitud
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const fecha = getValue<string | null>();
       return <div className="text-sm">{formatearFecha(fecha)}</div>;
     },
+    sortingFn: (rowA, rowB, columnId) => {
+      const dateA = new Date(rowA.getValue(columnId) as string);
+      const dateB = new Date(rowB.getValue(columnId) as string);
+      return dateA.getTime() - dateB.getTime();
+    },
   },
   {
     accessorKey: "fechaPermiso",
-    header: "Fecha Permiso",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Fecha Permiso
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const fecha = getValue<string | null>();
       return <div className="text-sm font-medium">{formatearFecha(fecha)}</div>;
+    },
+    // Habilitar filtro personalizado de rango de fechas
+    filterFn: (row, columnId, filterValue: { desde: Date; hasta: Date }) => {
+      if (!filterValue) return true;
+      const fecha = parseISO(row.getValue(columnId) as string);
+      return isWithinInterval(fecha, {
+        start: filterValue.desde,
+        end: filterValue.hasta,
+      });
+    },
+    sortingFn: (rowA, rowB, columnId) => {
+      const dateA = new Date(rowA.getValue(columnId) as string);
+      const dateB = new Date(rowB.getValue(columnId) as string);
+      return dateA.getTime() - dateB.getTime();
     },
   },
   {
@@ -152,7 +225,18 @@ export const columns = (
   },
   {
     accessorKey: "conGoceSalario",
-    header: () => <div className="text-center">Con Goce</div>,
+    header: ({ column }) => (
+      <div className="text-center">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent"
+        >
+          Con Goce
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ getValue }) => {
       const conGoce = getValue<boolean | null>();
       return (
@@ -167,10 +251,25 @@ export const columns = (
         </div>
       );
     },
+    // Filtro personalizado para boolean
+    filterFn: (row, columnId, filterValue: string) => {
+      if (filterValue === "") return true;
+      const valor = row.getValue(columnId);
+      return filterValue === "true" ? valor === true : valor === false;
+    },
   },
   {
     accessorKey: "estadoSolicitud",
-    header: "Estado",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent"
+      >
+        Estado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ getValue }) => {
       const estado = getValue<string | null>();
       const badgeConfig = getEstadoBadge(estado);
@@ -180,6 +279,8 @@ export const columns = (
         </Badge>
       );
     },
+    // Habilitar filtro exacto
+    filterFn: "equals",
   },
   {
     accessorKey: "jefeApruebaId",
