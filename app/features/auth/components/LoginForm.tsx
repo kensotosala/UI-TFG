@@ -57,7 +57,7 @@ export default function LoginPage() {
       // Usar setTimeout para asegurar que el toast se muestre
       setTimeout(() => {
         toast.error(toastMessage, {
-          position: "top-right",
+          position: "top-center",
           autoClose: 5000,
           hideProgressBar: false,
           closeOnClick: true,
