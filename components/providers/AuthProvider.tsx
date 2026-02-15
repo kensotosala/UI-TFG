@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, {
@@ -7,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -42,16 +42,6 @@ interface AuthProviderProps {
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
-// Mapeo de roles del backend a rutas
-const ROLE_ROUTES = {
-  Administrador: "/admin",
-  Supervisor: "/admin",
-  Empleado: "/empleado",
-  "Recursos Humanos": "/admin",
-  Desarrollador: "/admin",
-} as const;
-
-// Función helper para obtener la ruta según el rol
 const getRouteForRole = (roles: string[]): string => {
   if (roles.includes("ADMINISTRADOR")) return "/admin";
   if (roles.includes("SUPERVISOR")) return "/admin";
@@ -85,6 +75,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+
+  // Refs para controlar redirecciones
+  const isLoginInProgress = useRef(false);
+  const isRedirecting = useRef(false);
 
   const loadUserFromToken = useCallback(() => {
     const token = authService.getToken();
@@ -126,6 +120,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
+      if (isLoginInProgress.current || isRedirecting.current) return;
+
       if (e.key === "authToken" || e.key === null) {
         const hasValidAuth = loadUserFromToken();
 
@@ -140,7 +136,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [loadUserFromToken, pathname, router]);
 
   useEffect(() => {
-    if (isLoading) return;
+    // No ejecutar redirecciones durante el proceso de login
+    if (isLoading || isLoginInProgress.current || isRedirecting.current) return;
 
     const isPublicRoute = PUBLIC_ROUTES.some(
       (route) => pathname === route || pathname?.startsWith(`${route}/`),
@@ -149,41 +146,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const token = authService.getToken();
     const isValidAuth = token && authService.isAuthenticated();
 
-    // Si no está en ruta pública y no está autenticado, redirigir a login
     if (!isPublicRoute && !isValidAuth) {
       router.replace("/login");
       return;
     }
 
-    // Si está en login y ya está autenticado, redirigir según su rol
-    if (pathname === "/login" && isValidAuth) {
+    if (pathname === "/login" && isValidAuth && !isRedirecting.current) {
       const userData = authService.decodeJWT(token!);
       if (userData?.roles && userData.roles.length > 0) {
         const targetRoute = getRouteForRole(userData.roles);
+        isRedirecting.current = true;
         router.replace(targetRoute);
+        setTimeout(() => {
+          isRedirecting.current = false;
+        }, 500);
       }
       return;
     }
 
-    // Verificar acceso a rutas protegidas
     if (isValidAuth && user && user.roles.length > 0) {
       const hasAccess = canAccessRoute(user.roles, pathname || "");
 
       if (!hasAccess) {
         console.log("❌ Acceso denegado a:", pathname, "Roles:", user.roles);
-        // Si no tiene acceso, redirigir a su ruta por defecto
         const targetRoute = getRouteForRole(user.roles);
+        isRedirecting.current = true;
         router.replace(targetRoute);
+        setTimeout(() => {
+          isRedirecting.current = false;
+        }, 500);
         return;
-      } else {
-        console.log("✅ Acceso permitido a:", pathname, "Roles:", user.roles);
       }
     }
   }, [pathname, isLoading, router, user]);
 
   const login = async (credentials: LoginCredentials) => {
+    // Marcar que el login está en progreso
+    isLoginInProgress.current = true;
+    isRedirecting.current = false;
+
     try {
-      setIsLoading(true);
       await authService.login(credentials);
       const success = loadUserFromToken();
 
@@ -192,16 +194,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (userData?.roles && userData.roles.length > 0) {
           const targetRoute = getRouteForRole(userData.roles);
+          isRedirecting.current = true;
           router.replace(targetRoute);
+          setTimeout(() => {
+            isRedirecting.current = false;
+          }, 500);
         } else {
-          // Si no tiene roles, ir a página por defecto
+          isRedirecting.current = true;
           router.replace("/empleado");
+          setTimeout(() => {
+            isRedirecting.current = false;
+          }, 500);
         }
       } else {
-        throw new Error("Error al cargar datos del usuario");
+        throw new Error("Error al cargar datos del usuario después del login");
       }
+    } catch (error) {
+      // En caso de error, aseguramos que no haya redirección
+      isRedirecting.current = false;
+      throw error;
     } finally {
-      setIsLoading(false);
+      // Pequeño delay antes de permitir nuevos efectos
+      setTimeout(() => {
+        isLoginInProgress.current = false;
+      }, 300);
     }
   };
 

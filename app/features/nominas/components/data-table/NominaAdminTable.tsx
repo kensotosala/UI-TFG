@@ -1,30 +1,30 @@
-// app/features/nominas/components/data-table/NominaTable.tsx
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { DataTable } from "./data-table";
-import { Calendar, Filter, X } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { useNomina } from "../../hooks/useNomina";
 import { NominaDTO } from "../../nomina.types";
 import { columns } from "./nomina-columns";
 import { GenerarQuincenalDialog } from "./dialogs/nomina-generate-dialog";
 import { NominaDetailsDialog } from "./dialogs/nomina-details-dialog";
 import { NominaAnularDialog } from "./dialogs/nomina-anular-dialog";
+import { nominaService } from "../../services/nomina.service";
+import { toast } from "sonner";
+import { format, isAfter, startOfDay } from "date-fns";
 
 export function NominaAdminTable() {
-  // Estados de filtros
   const [quincenaFilter, setQuincenaFilter] = useState<number | undefined>(
     undefined,
   );
   const [mesFilter, setMesFilter] = useState<number | undefined>(undefined);
   const [anioFilter, setAnioFilter] = useState<number | undefined>(undefined);
-  const [estadoFilter, setEstadoFilter] = useState<string>("TODOS");
-  const [searchFilter, setSearchFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [estadoFilter] = useState<string>("TODOS");
+  const [searchFilter] = useState("");
 
   const { nominas, isLoading, refetch, anularNomina, isDeleting } = useNomina(
     quincenaFilter,
@@ -35,8 +35,86 @@ export function NominaAdminTable() {
   const [openGenerate, setOpenGenerate] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [openAnular, setOpenAnular] = useState(false);
-
   const [selectedNomina, setSelectedNomina] = useState<NominaDTO | null>(null);
+
+  useEffect(() => {
+    const verificarYGenerarNominas = async () => {
+      const hoy = startOfDay(new Date());
+      const diaActual = hoy.getDate();
+      const mesActual = hoy.getMonth() + 1;
+      const anioActual = hoy.getFullYear();
+
+      const generacionPendiente = localStorage.getItem(
+        `nomina_generada_${anioActual}_${mesActual}`,
+      );
+
+      if (generacionPendiente) {
+        const { quincena1, quincena2 } = JSON.parse(generacionPendiente);
+
+        if (diaActual === 16 && !quincena1) {
+          try {
+            await nominaService.generarNominaQuincenal({
+              quincena: 1,
+              mes: mesActual,
+              anio: anioActual,
+              fechaPago: format(new Date(), "yyyy-MM-dd"),
+              empleadosIds: undefined,
+            });
+
+            localStorage.setItem(
+              `nomina_generada_${anioActual}_${mesActual}`,
+              JSON.stringify({ quincena1: true, quincena2 }),
+            );
+
+            toast.success("Nómina generada automáticamente", {
+              description: "Primera quincena generada exitosamente",
+            });
+
+            refetch();
+          } catch (error) {
+            console.error("Error generando primera quincena:", error);
+          }
+        }
+
+        const primerDiaMesSiguiente = new Date(anioActual, mesActual, 1);
+        const esPrimerDiaMesSiguiente =
+          isAfter(hoy, primerDiaMesSiguiente) ||
+          hoy.getTime() === primerDiaMesSiguiente.getTime();
+
+        if (esPrimerDiaMesSiguiente && !quincena2) {
+          try {
+            await nominaService.generarNominaQuincenal({
+              quincena: 2,
+              mes: mesActual - 1 || 12,
+              anio: mesActual === 1 ? anioActual - 1 : anioActual,
+              fechaPago: format(new Date(), "yyyy-MM-dd"),
+              empleadosIds: undefined,
+            });
+
+            localStorage.setItem(
+              `nomina_generada_${anioActual}_${mesActual}`,
+              JSON.stringify({ quincena1, quincena2: true }),
+            );
+
+            toast.success("Nómina generada automáticamente", {
+              description: "Segunda quincena generada exitosamente",
+            });
+
+            refetch();
+          } catch (error) {
+            console.error("Error generando segunda quincena:", error);
+          }
+        }
+      } else {
+        localStorage.setItem(
+          `nomina_generada_${anioActual}_${mesActual}`,
+          JSON.stringify({ quincena1: false, quincena2: false }),
+        );
+      }
+    };
+
+    verificarYGenerarNominas();
+  }, [refetch]);
 
   const handleAnular = async (id: number) => {
     try {
@@ -60,15 +138,6 @@ export function NominaAdminTable() {
     setOpenAnular(true);
   };
 
-  const handleClearFilters = () => {
-    setQuincenaFilter(undefined);
-    setMesFilter(undefined);
-    setAnioFilter(undefined);
-    setEstadoFilter("TODOS");
-    setSearchFilter("");
-  };
-
-  // Filtrar nóminas
   const nominasFiltradas = (nominas || []).filter((nomina) => {
     if (
       estadoFilter !== "TODOS" &&
@@ -116,15 +185,6 @@ export function NominaAdminTable() {
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
-                  onClick={() => setShowFilters(!showFilters)}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Filter className="h-4 w-4" />
-                  Filtros
-                </Button>
-
-                <Button
                   onClick={() => setOpenGenerate(true)}
                   className="gap-2 bg-blue-600 hover:bg-blue-700"
                 >
@@ -133,29 +193,24 @@ export function NominaAdminTable() {
                 </Button>
               </div>
             </div>
-
-            {showFilters && (
-              <div className="border rounded-lg p-4 bg-slate-50">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearFilters}
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Limpiar filtros
-                </Button>
-                {/* Agrega tus filtros aquí */}
-              </div>
-            )}
           </div>
         </CardHeader>
 
         <CardContent>
           {nominasFiltradas.length === 0 ? (
-            <div className="text-center py-12">
-              <p>No hay nóminas</p>
-              <Button onClick={() => setOpenGenerate(true)}>
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <h3 className="text-lg font-medium">
+                No hay nóminas registradas
+              </h3>
+              <p className="text-muted-foreground mt-2 mb-4">
+                Las nóminas se generan automáticamente los días 16 y 1 de cada
+                mes, o puedes generarlas manualmente
+              </p>
+              <Button
+                onClick={() => setOpenGenerate(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
                 Generar Quincena
               </Button>
             </div>

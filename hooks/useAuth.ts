@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   authService,
   LoginCredentials,
@@ -27,7 +27,10 @@ export const useAuth = (): UseAuthReturn => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Inicializar autenticación
+  // Ref para prevenir redirecciones durante el login
+  const isLoginAttempt = useRef(false);
+  const isRedirecting = useRef(false);
+
   useEffect(() => {
     const initAuth = () => {
       const currentUser = authService.getCurrentUser();
@@ -37,7 +40,10 @@ export const useAuth = (): UseAuthReturn => {
         setUser(currentUser);
       } else {
         setUser(null);
-        authService.clearAuthData();
+        // Solo limpiar si no estamos en medio de un intento de login
+        if (!isLoginAttempt.current && !isRedirecting.current) {
+          authService.clearAuthData();
+        }
       }
 
       setIsLoading(false);
@@ -45,8 +51,10 @@ export const useAuth = (): UseAuthReturn => {
 
     initAuth();
 
-    // Escuchar cambios en localStorage (para múltiples pestañas)
     const handleStorageChange = (e: StorageEvent) => {
+      // No reaccionar a cambios durante el login
+      if (isLoginAttempt.current || isRedirecting.current) return;
+
       if (e.key === "auth_token" || e.key === "user_data") {
         initAuth();
       }
@@ -56,11 +64,13 @@ export const useAuth = (): UseAuthReturn => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Función de login con logs de depuración
   const login = useCallback(
     async (credentials: LoginCredentials) => {
       try {
         console.log("Iniciando login...");
+
+        // Marcar que estamos intentando login
+        isLoginAttempt.current = true;
         setIsLoading(true);
 
         const response = await authService.login(credentials);
@@ -74,20 +84,32 @@ export const useAuth = (): UseAuthReturn => {
           console.log("Usuario establecido en estado");
         }
 
-        console.log("Redirigiendo a /");
-        router.push("/");
-        router.refresh();
+        // Marcar que vamos a redirigir
+        isRedirecting.current = true;
+
+        // Pequeño delay para asegurar que todo esté listo
+        setTimeout(() => {
+          console.log("Redirigiendo a /");
+          router.push("/");
+          // Resetear refs después de la redirección
+          setTimeout(() => {
+            isLoginAttempt.current = false;
+            isRedirecting.current = false;
+          }, 500);
+        }, 100);
       } catch (err: any) {
         console.error("Error en login:", err);
+        // Resetear refs inmediatamente en caso de error
+        isLoginAttempt.current = false;
+        isRedirecting.current = false;
         throw err;
       } finally {
         setIsLoading(false);
       }
     },
-    [router]
+    [router],
   );
 
-  // Función de logout
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -96,7 +118,6 @@ export const useAuth = (): UseAuthReturn => {
 
       console.log("Usuario desconectado, redirigiendo a /login");
       router.push("/login");
-      router.refresh();
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     } finally {
@@ -104,14 +125,12 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [router]);
 
-  // Verificar autenticación
   const checkAuth = useCallback(() => authService.isAuthenticated(), []);
 
-  // Verificar roles
   const hasRole = useCallback((role: string) => authService.hasRole(role), []);
   const hasAnyRole = useCallback(
     (roles: string[]) => authService.hasAnyRole(roles),
-    []
+    [],
   );
 
   return {

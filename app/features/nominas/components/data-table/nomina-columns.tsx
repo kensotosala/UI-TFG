@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,28 +16,28 @@ import { NominaDTO } from "../../nomina.types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
-const getEstadoBadge = (estado?: string) => {
-  const estadoUpper = estado?.toUpperCase() || "PENDIENTE";
+// const getEstadoBadge = (estado?: string) => {
+//   const estadoUpper = estado?.toUpperCase() || "PENDIENTE";
 
-  const variants: Record<string, { variant: any; className: string }> = {
-    PENDIENTE: {
-      variant: "secondary",
-      className: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    },
-    ANULADA: {
-      variant: "destructive",
-      className: "bg-red-100 text-red-800 border-red-300",
-    },
-  };
+//   const variants: Record<string, { variant: any; className: string }> = {
+//     PENDIENTE: {
+//       variant: "secondary",
+//       className: "bg-yellow-100 text-yellow-800 border-yellow-300",
+//     },
+//     ANULADA: {
+//       variant: "destructive",
+//       className: "bg-red-100 text-red-800 border-red-300",
+//     },
+//   };
 
-  const config = variants[estadoUpper] || variants.PENDIENTE;
+//   const config = variants[estadoUpper] || variants.PENDIENTE;
 
-  return (
-    <Badge variant={config.variant} className={config.className}>
-      {estadoUpper}
-    </Badge>
-  );
-};
+//   return (
+//     <Badge variant={config.variant} className={config.className}>
+//       {estadoUpper}
+//     </Badge>
+//   );
+// };
 
 export const columns = (
   onVer: (nomina: NominaDTO) => void,
@@ -208,20 +207,20 @@ export const columns = (
       </div>
     ),
   },
-  {
-    accessorKey: "estado",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="hover:bg-transparent"
-      >
-        Estado
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => getEstadoBadge(row.original.estado),
-  },
+  // {
+  //   accessorKey: "estado",
+  //   header: ({ column }) => (
+  //     <Button
+  //       variant="ghost"
+  //       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       className="hover:bg-transparent"
+  //     >
+  //       Estado
+  //       <ArrowUpDown className="ml-2 h-4 w-4" />
+  //     </Button>
+  //   ),
+  //   cell: ({ row }) => getEstadoBadge(row.original.estado),
+  // },
   {
     id: "acciones",
     header: () => <div className="text-center">Acciones</div>,

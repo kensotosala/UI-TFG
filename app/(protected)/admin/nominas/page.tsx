@@ -1,6 +1,6 @@
 "use client";
 
-import { NominaAdminTable } from "@/app/features/nominas/components/data-table/NominaTable";
+import { NominaAdminTable } from "@/app/features/nominas/components/data-table/NominaAdminTable";
 
 const NominaPage = () => {
   return (

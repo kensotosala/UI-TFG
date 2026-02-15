@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/features/nomina/components/dialogs/generar-quincenal-dialog.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,7 +25,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, isAfter, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { nominaService } from "../../../services/nomina.service";
 
@@ -60,9 +58,9 @@ export function GenerarQuincenalDialog({
   const [quincenaSeleccionada, setQuincenaSeleccionada] = useState<1 | 2>(1);
   const [preview, setPreview] = useState<DetalleNominaPreview[]>([]);
 
-  // Calcular fechas actuales
-  const hoy = new Date();
-  const mesActual = hoy.getMonth() + 1; // 1-12
+  const hoy = startOfDay(new Date());
+  const diaActual = hoy.getDate();
+  const mesActual = hoy.getMonth() + 1;
   const anioActual = hoy.getFullYear();
 
   const fechasQuincena1 = {
@@ -76,26 +74,48 @@ export function GenerarQuincenalDialog({
       anioActual,
       mesActual - 1,
       new Date(anioActual, mesActual, 0).getDate(),
-    ), // Último día del mes
+    ),
   };
 
-  const quincena =
-    quincenaSeleccionada === 1 ? fechasQuincena1 : fechasQuincena2;
+  const puedeGenerarPrimeraQuincena = () => {
+    return diaActual >= 16;
+  };
 
-  // Generar vista previa llamando al backend
+  const puedeGenerarSegundaQuincena = () => {
+    const primerDiaMesSiguiente = new Date(anioActual, mesActual, 1);
+    return (
+      isAfter(hoy, primerDiaMesSiguiente) ||
+      hoy.getTime() === primerDiaMesSiguiente.getTime()
+    );
+  };
+
   const handleGenerarPreview = async () => {
+    if (quincenaSeleccionada === 1 && !puedeGenerarPrimeraQuincena()) {
+      toast.error("No se puede generar esta nómina", {
+        description:
+          "La primera quincena solo se puede generar después del día 15",
+      });
+      return;
+    }
+
+    if (quincenaSeleccionada === 2 && !puedeGenerarSegundaQuincena()) {
+      toast.error("No se puede generar esta nómina", {
+        description:
+          "La segunda quincena solo se puede generar después del último día del mes",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      // Llamar al endpoint de generación (sin guardar todavía)
       const detalles = await nominaService.generarNominaQuincenal({
         quincena: quincenaSeleccionada,
         mes: mesActual,
         anio: anioActual,
-        fechaPago: new Date().toISOString(),
-        empleadosIds: undefined, // Todos los empleados activos
+        fechaPago: format(new Date(), "yyyy-MM-dd"),
+        empleadosIds: undefined,
       });
 
-      // Mapear respuesta del backend a preview
       const preview = detalles.map((detalle: any) => ({
         empleadoId: detalle.empleadoId,
         nombreCompleto: detalle.nombreCompleto,
@@ -120,7 +140,6 @@ export function GenerarQuincenalDialog({
     }
   };
 
-  // Confirmar y guardar nóminas
   const handleConfirmarGeneracion = async () => {
     setIsGenerating(true);
 
@@ -129,7 +148,7 @@ export function GenerarQuincenalDialog({
         quincena: quincenaSeleccionada,
         mes: mesActual,
         anio: anioActual,
-        fechaPago: new Date().toISOString(),
+        fechaPago: format(new Date(), "yyyy-MM-dd"),
         empleadosIds: undefined,
       });
 
@@ -157,7 +176,6 @@ export function GenerarQuincenalDialog({
     onOpenChange(false);
   };
 
-  // Totales
   const totalEmpleados = preview.length;
   const totalBruto = preview.reduce((sum, emp) => sum + emp.totalBruto, 0);
   const totalDeducciones = preview.reduce(
@@ -183,37 +201,38 @@ export function GenerarQuincenalDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* PASO 1: SELECCIÓN */}
         {step === "seleccion" && (
           <div className="space-y-6 py-4">
-            {/* Información */}
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
                   <AlertCircle className="h-5 w-5 text-blue-600" />
                   <p className="font-semibold text-blue-900">
-                    Período: {format(hoy, "MMMM yyyy", { locale: es })}
+                    Hoy: {format(hoy, "dd 'de' MMMM 'de' yyyy", { locale: es })}
                   </p>
                 </div>
                 <p className="text-sm text-blue-800">
-                  Las nóminas se generan para empleados activos según
-                  legislación costarricense. Se calcularán automáticamente
-                  salarios, horas extras, deducciones CCSS e impuesto sobre la
-                  renta.
+                  Solo puedes generar nóminas de quincenas que ya finalizaron.
+                  La primera quincena se genera después del día 15, y la segunda
+                  quincena después del último día del mes.
                 </p>
               </CardContent>
             </Card>
 
-            {/* Selección de quincena */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Primera Quincena */}
               <Card
                 className={`cursor-pointer transition-all ${
-                  quincenaSeleccionada === 1
-                    ? "border-2 border-blue-500 bg-blue-50"
-                    : "border hover:border-blue-300"
+                  !puedeGenerarPrimeraQuincena()
+                    ? "opacity-50 cursor-not-allowed bg-gray-100"
+                    : quincenaSeleccionada === 1
+                      ? "border-2 border-blue-500 bg-blue-50"
+                      : "border hover:border-blue-300"
                 }`}
-                onClick={() => setQuincenaSeleccionada(1)}
+                onClick={() => {
+                  if (puedeGenerarPrimeraQuincena()) {
+                    setQuincenaSeleccionada(1);
+                  }
+                }}
               >
                 <CardContent className="pt-6">
                   <div className="text-center space-y-3">
@@ -234,21 +253,29 @@ export function GenerarQuincenalDialog({
                         })}
                       </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      15 días laborales
-                    </p>
+                    <p className="text-xs text-muted-foreground">15 días</p>
+                    {!puedeGenerarPrimeraQuincena() && (
+                      <Badge variant="destructive" className="text-xs">
+                        Disponible después del 15
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Segunda Quincena */}
               <Card
                 className={`cursor-pointer transition-all ${
-                  quincenaSeleccionada === 2
-                    ? "border-2 border-blue-500 bg-blue-50"
-                    : "border hover:border-blue-300"
+                  !puedeGenerarSegundaQuincena()
+                    ? "opacity-50 cursor-not-allowed bg-gray-100"
+                    : quincenaSeleccionada === 2
+                      ? "border-2 border-blue-500 bg-blue-50"
+                      : "border hover:border-blue-300"
                 }`}
-                onClick={() => setQuincenaSeleccionada(2)}
+                onClick={() => {
+                  if (puedeGenerarSegundaQuincena()) {
+                    setQuincenaSeleccionada(2);
+                  }
+                }}
               >
                 <CardContent className="pt-6">
                   <div className="text-center space-y-3">
@@ -274,8 +301,14 @@ export function GenerarQuincenalDialog({
                         fechasQuincena2.fin,
                         fechasQuincena2.inicio,
                       ) + 1}{" "}
-                      días laborales
+                      días
                     </p>
+                    {!puedeGenerarSegundaQuincena() && (
+                      <Badge variant="destructive" className="text-xs">
+                        Disponible después del{" "}
+                        {format(fechasQuincena2.fin, "dd MMM", { locale: es })}
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -283,10 +316,8 @@ export function GenerarQuincenalDialog({
           </div>
         )}
 
-        {/* PASO 2: PREVIEW */}
         {step === "preview" && (
           <div className="flex-1 overflow-hidden flex flex-col space-y-4">
-            {/* Cards de resumen */}
             <div className="grid grid-cols-4 gap-3">
               <Card className="bg-blue-50">
                 <CardContent className="pt-4 pb-4">
@@ -354,7 +385,6 @@ export function GenerarQuincenalDialog({
               </Card>
             </div>
 
-            {/* Lista de empleados */}
             <ScrollArea className="flex-1 border rounded-lg">
               <div className="p-4 space-y-2">
                 {preview.map((emp) => (
@@ -437,7 +467,7 @@ export function GenerarQuincenalDialog({
               <Button variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button
+              {/* <Button
                 onClick={handleGenerarPreview}
                 disabled={isGenerating}
                 className="bg-blue-600 hover:bg-blue-700"
@@ -453,7 +483,7 @@ export function GenerarQuincenalDialog({
                     Ver Vista Previa
                   </>
                 )}
-              </Button>
+              </Button> */}
             </>
           ) : (
             <>
