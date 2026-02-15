@@ -48,12 +48,14 @@ export const authService = {
 
       return response.data;
     } catch (error: any) {
-      const message =
-        error.response?.data?.message ||
-        "Credenciales incorrectas. Por favor, verifique su usuario y contraseña.";
-
-      const err: any = new Error(message);
+      // Preservar el status code y el mensaje del error
+      const err: any = new Error(
+        error.response?.data?.mensaje ||
+          error.response?.data?.message ||
+          "Credenciales incorrectas. Por favor, verifique su usuario y contraseña.",
+      );
       err.status = error.response?.status;
+      err.response = error.response;
       throw err;
     }
   },

@@ -1,7 +1,6 @@
 "use client";
 
 import DisplayDate from "@/components/DisplayDate";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,9 +11,10 @@ import {
   Briefcase,
   Building2,
 } from "lucide-react";
+import { useAuthContext } from "@/components/providers/AuthProvider";
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   const stats = [
     {

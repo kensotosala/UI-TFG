@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, {
@@ -90,14 +91,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (!authService.isAuthenticated()) {
       setUser(null);
-      authService.logout();
+      authService.clearAuthData();
       return false;
     }
 
     const userData = authService.decodeJWT(token);
     if (!userData) {
       setUser(null);
-      authService.logout();
+      authService.clearAuthData();
       return false;
     }
 
@@ -106,17 +107,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    const initializeAuth = () => {
-      const hasValidAuth = loadUserFromToken();
-      setIsLoading(false);
+    const hasValidAuth = loadUserFromToken();
+    setIsLoading(false);
 
-      if (!hasValidAuth && !PUBLIC_ROUTES.includes(pathname || "")) {
-        router.replace("/login");
-      }
-    };
-
-    initializeAuth();
-  }, [loadUserFromToken, pathname, router]);
+    if (!hasValidAuth && !PUBLIC_ROUTES.includes(pathname || "")) {
+      router.replace("/login");
+    }
+  }, []);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -146,7 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const token = authService.getToken();
     const isValidAuth = token && authService.isAuthenticated();
 
-    if (!isPublicRoute && !isValidAuth) {
+    if (!isPublicRoute && !isValidAuth && pathname !== "/login") {
       router.replace("/login");
       return;
     }
@@ -210,11 +207,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error("Error al cargar datos del usuario después del login");
       }
     } catch (error) {
-      // En caso de error, aseguramos que no haya redirección
+      // En caso de error, aseguramos que NO haya redirección
       isRedirecting.current = false;
+      isLoginInProgress.current = false;
+
+      // Esperar un momento para asegurar que el toast se muestre
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       throw error;
     } finally {
-      // Pequeño delay antes de permitir nuevos efectos
       setTimeout(() => {
         isLoginInProgress.current = false;
       }, 300);

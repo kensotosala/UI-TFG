@@ -14,10 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Badge } from "../ui/badge";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "../providers/AuthProvider";
 
 const Navbar = () => {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading } = useAuthContext();
 
   const handleLogout = async () => {
     try {

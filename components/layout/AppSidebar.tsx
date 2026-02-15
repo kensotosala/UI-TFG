@@ -31,13 +31,13 @@ import {
   SidebarSeparator,
 } from "../ui/sidebar";
 
-import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { useAuthContext } from "../providers/AuthProvider";
 
 const adminMenuGroups = [
   {
@@ -156,7 +156,7 @@ const empleadoMenuGroups = [
 ];
 
 export function AppSidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthContext();
   const isAdmin = user?.roles?.includes("ADMIN");
   const menuGroups = isAdmin ? adminMenuGroups : empleadoMenuGroups;
 
