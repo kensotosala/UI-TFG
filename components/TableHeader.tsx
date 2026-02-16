@@ -16,8 +16,12 @@ const TableHeader: React.FC<TableHeaderProps> = ({
 }) => {
   return (
     <div className="flex items-center mb-6">
-      <h1 className="text-3xl font-semibold">Lista de {title}</h1>
-      <Button className="ml-auto" onClick={onAddClick}>
+      <h1 className="text-2xl font-bold">Lista de {title}</h1>
+      <Button
+        className="ml-auto"
+        style={{ backgroundColor: "#052940" }}
+        onClick={onAddClick}
+      >
         Agregar {entity}
       </Button>
     </div>

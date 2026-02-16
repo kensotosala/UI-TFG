@@ -1,4 +1,4 @@
-import { EmpleadosTable } from "@/app/features/empleados/components/data-table/page";
+import { EmpleadosTable } from "@/app/features/empleados/components/data-table/TablaEmpleados";
 
 const EmpleadosPage = () => {
   return (

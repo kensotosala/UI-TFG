@@ -8,7 +8,6 @@ import TableHeader from "@/components/TableHeader";
 
 import { Empleado } from "../../types";
 import { columns } from "./columns";
-import { EmpleadoCreateDialog } from "./dialogs/create-dialog";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "./data-table";
 import { EmpleadoDetailsDialog } from "./dialogs/detail-dialog";
@@ -16,6 +15,7 @@ import { EmpleadoEditDialog } from "./dialogs/edit-dialog";
 import { EmpleadoDeleteDialog } from "./dialogs/delete-dialog";
 import { useEmpleados } from "../../hooks/useEmpleado";
 import { useEmpleadoMutations } from "../../hooks/useEmpleadosMutation";
+import { EmpleadoCreateDialog } from "./dialogs/CrearEmpleadoDialog";
 
 export function EmpleadosTable() {
   const { empleados, isLoading, refetch } = useEmpleados();
@@ -32,7 +32,7 @@ export function EmpleadosTable() {
   const [openDelete, setOpenDelete] = useState(false);
   const [openView, setOpenView] = useState(false);
   const [selectedEmpleado, setSelectedEmpleado] = useState<Empleado | null>(
-    null
+    null,
   );
 
   const handleCreate = async (empleadoData: any) => {

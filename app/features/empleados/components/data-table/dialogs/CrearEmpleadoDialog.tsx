@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { useDepartamentos } from "@/app/features/departamentos/hooks/useDepartamentos";
 import { usePuestos } from "@/app/features/puestos/hooks/usePuestos";
-import { ROLES } from "@/constants/roles";
 import { Separator } from "@/components/ui/separator";
 import { ChevronDownIcon } from "lucide-react";
 import {
@@ -31,6 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useRoles } from "@/app/features/roles/hooks/useRoles";
 
 type EmpleadoCreateForm = Omit<Empleado, "id" | "idEmpleado" | "estado"> & {
   nombreUsuario: string;
@@ -69,6 +69,7 @@ export function EmpleadoCreateDialog({
   const [formData, setFormData] = useState<EmpleadoCreateForm>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { departamentos } = useDepartamentos();
+  const { roles } = useRoles();
   const { puestos } = usePuestos();
   const [openPopover, setOpenPopover] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -79,7 +80,7 @@ export function EmpleadoCreateDialog({
 
   const handleChange = <K extends keyof EmpleadoCreateForm>(
     field: K,
-    value: EmpleadoCreateForm[K]
+    value: EmpleadoCreateForm[K],
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -114,8 +115,11 @@ export function EmpleadoCreateDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="mb-2">Código</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Código
+              </Label>
               <Input
+                id="input-required"
                 value={formData.codigoEmpleado}
                 onChange={(e) => handleChange("codigoEmpleado", e.target.value)}
                 required
@@ -123,8 +127,11 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Email</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Email
+              </Label>
               <Input
+                id="input-required"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
@@ -133,8 +140,11 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Nombre</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Nombre
+              </Label>
               <Input
+                id="input-required"
                 value={formData.nombre}
                 onChange={(e) => handleChange("nombre", e.target.value)}
                 required
@@ -142,8 +152,11 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Primer apellido</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Primer apellido
+              </Label>
               <Input
+                id="input-required"
                 value={formData.primerApellido}
                 onChange={(e) => handleChange("primerApellido", e.target.value)}
                 required
@@ -151,8 +164,11 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Segundo apellido</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Segundo apellido
+              </Label>
               <Input
+                id="input-required"
                 value={formData.segundoApellido ?? ""}
                 onChange={(e) =>
                   handleChange("segundoApellido", e.target.value)
@@ -161,9 +177,14 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Teléfono</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Teléfono
+              </Label>
               <Input
+                id="input-required form-phone"
+                type="tel"
                 value={formData.telefono}
+                placeholder="8888-8888"
                 onChange={(e) => handleChange("telefono", e.target.value)}
               />
             </div>
@@ -198,7 +219,7 @@ export function EmpleadoCreateDialog({
 
                       handleChange(
                         "fechaContratacion",
-                        formatDateToISO(selectedDate)
+                        formatDateToISO(selectedDate),
                       );
 
                       setOpenPopover(false);
@@ -209,7 +230,7 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label htmlFor="departamento" className="mb-2">
+              <Label htmlFor="input-required" className="mb-2">
                 Departamento
               </Label>
               <Select
@@ -242,7 +263,7 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label htmlFor="departamento" className="mb-2">
+              <Label htmlFor="input-required" className="mb-2">
                 Puesto
               </Label>
               <Select
@@ -273,7 +294,7 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label htmlFor="departamento" className="mb-2">
+              <Label htmlFor="input-required" className="mb-2">
                 Rol
               </Label>
               <Select
@@ -286,7 +307,7 @@ export function EmpleadoCreateDialog({
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Roles</SelectLabel>
-                    {ROLES.map((rol) => (
+                    {roles.map((rol) => (
                       <SelectItem key={rol.id} value={rol.id.toString()}>
                         {rol.nombre}
                       </SelectItem>
@@ -297,8 +318,12 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Salario base</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Salario base
+              </Label>
               <Input
+                id="input-required"
+                min={100000}
                 type="number"
                 value={formData.salarioBase}
                 onChange={(e) =>
@@ -308,8 +333,11 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Usuario</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Usuario
+              </Label>
               <Input
+                id="input-required"
                 value={formData.nombreUsuario}
                 onChange={(e) => handleChange("nombreUsuario", e.target.value)}
                 required
@@ -317,8 +345,11 @@ export function EmpleadoCreateDialog({
             </div>
 
             <div>
-              <Label className="mb-2">Contraseña</Label>
+              <Label htmlFor="input-required" className="mb-2">
+                Contraseña
+              </Label>
               <Input
+                id="input-required"
                 type="password"
                 value={formData.password}
                 onChange={(e) => handleChange("password", e.target.value)}
