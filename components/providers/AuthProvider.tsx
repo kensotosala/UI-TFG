@@ -44,7 +44,7 @@ interface AuthProviderProps {
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
 const getRouteForRole = (roles: string[]): string => {
-  if (roles.includes("ADMINISTRADOR")) return "/admin";
+  if (roles.includes("ADMIN")) return "/admin";
   if (roles.includes("SUPERVISOR")) return "/admin";
   if (roles.includes("RECURSOS HUMANOS")) return "/admin";
   if (roles.includes("DESARROLLADOR")) return "/admin";
