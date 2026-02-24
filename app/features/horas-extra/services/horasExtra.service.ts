@@ -8,6 +8,7 @@ import {
   FiltrosHorasExtras,
   ReporteHorasExtras,
 } from "../types";
+import { HoraExtraHoyDTO } from "../../viewEmpleado/asistencia-empleado/types";
 
 const API_BASE_URL = "https://localhost:7121/api/HorasExtras";
 
@@ -137,6 +138,16 @@ export const horasExtraService = {
     const { data } = await axios.get<ReporteHorasExtras>(
       `${API_BASE_URL}/reporte/${empleadoId}`,
       { params: { fechaInicio, fechaFin } },
+    );
+    return data;
+  },
+
+  /**
+   * Valorar si existe una solicitud de hora extra válida para hoy
+   */
+  async getHoraExtraActiva(empleadoId: number): Promise<HoraExtraHoyDTO> {
+    const { data } = await axios.get<HoraExtraHoyDTO>(
+      `${API_BASE_URL}/activa/${empleadoId}`,
     );
     return data;
   },

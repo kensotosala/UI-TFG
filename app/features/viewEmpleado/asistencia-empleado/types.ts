@@ -196,7 +196,13 @@ export interface AsistenciaFormProps {
   asistencia?: Asistencia;
   empleados: EmpleadoAsistencia[];
   onSubmit: (
-    data: CrearAsistenciaDTO | ActualizarAsistenciaDTO
+    data: CrearAsistenciaDTO | ActualizarAsistenciaDTO,
   ) => Promise<void>;
   onCancel: () => void;
+}
+
+export interface HoraExtraHoyDTO {
+  tieneHoraExtra: boolean;
+  inicio?: string; // ISO string
+  fin?: string; // ISO string
 }
