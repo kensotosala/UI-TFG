@@ -37,10 +37,9 @@ interface AsistenciaCreateDialogProps {
   onCreate: (data: CrearAsistenciaDTO) => Promise<void>;
 }
 
-// ✅ CORREGIDO: Usar fechaRegistro en lugar de fecha
 const initialFormData: CrearAsistenciaDTO = {
   empleadoId: "",
-  fechaRegistro: "", // ✅ CORREGIDO
+  fechaRegistro: "",
   horaEntrada: "",
   horaSalida: "",
   estado: EstadoAsistencia.PRESENTE,
@@ -65,7 +64,7 @@ export function AsistenciaCreateDialog({
 
   const handleChange = <K extends keyof CrearAsistenciaDTO>(
     field: K,
-    value: CrearAsistenciaDTO[K]
+    value: CrearAsistenciaDTO[K],
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -197,7 +196,7 @@ export function AsistenciaCreateDialog({
                       // ✅ CORREGIDO: Usar fechaRegistro
                       handleChange(
                         "fechaRegistro",
-                        formatDateToISO(selectedDate)
+                        formatDateToISO(selectedDate),
                       );
                       setOpenPopover(false);
                     }}

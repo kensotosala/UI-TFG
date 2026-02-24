@@ -13,7 +13,7 @@ import {
   FiltrosAsistencia,
 } from "../../types";
 import { useAsistencias } from "../../hooks/useAsistencia";
-import { AsistenciaCreateDialog } from "./dialogs/create-dialog";
+import { AsistenciaCreateDialog } from "./dialogs/RegistrarAsistenciaDialog";
 import { AsistenciaDetailsDialog } from "./dialogs/detail-dialog";
 import { AsistenciaEditDialog } from "./dialogs/edit-dialog";
 import { AsistenciaDeleteDialog } from "./dialogs/delete-dialog";

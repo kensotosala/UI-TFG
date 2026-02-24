@@ -116,7 +116,7 @@ export function EmpleadoCreateDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Código
+                Código *
               </Label>
               <Input
                 id="input-required"
@@ -128,7 +128,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Email
+                Email *
               </Label>
               <Input
                 id="input-required"
@@ -141,7 +141,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Nombre
+                Nombre *
               </Label>
               <Input
                 id="input-required"
@@ -153,7 +153,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Primer apellido
+                Primer apellido *
               </Label>
               <Input
                 id="input-required"
@@ -165,11 +165,12 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Segundo apellido
+                Segundo apellido *
               </Label>
               <Input
                 id="input-required"
                 value={formData.segundoApellido ?? ""}
+                required
                 onChange={(e) =>
                   handleChange("segundoApellido", e.target.value)
                 }
@@ -178,7 +179,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Teléfono
+                Teléfono *
               </Label>
               <Input
                 id="input-required form-phone"
@@ -191,7 +192,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="date" className="px-1 mb-2">
-                Fecha de contratación
+                Fecha de contratación *
               </Label>
               <Popover open={openPopover} onOpenChange={setOpenPopover}>
                 <PopoverTrigger asChild>
@@ -231,7 +232,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Departamento
+                Departamento *
               </Label>
               <Select
                 value={
@@ -264,7 +265,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Puesto
+                Puesto *
               </Label>
               <Select
                 value={
@@ -295,7 +296,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Rol
+                Rol *
               </Label>
               <Select
                 value={formData.rolId ? formData.rolId.toString() : undefined}
@@ -319,7 +320,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Salario base
+                Salario base *
               </Label>
               <Input
                 id="input-required"
@@ -334,7 +335,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Usuario
+                Usuario *
               </Label>
               <Input
                 id="input-required"
@@ -346,7 +347,7 @@ export function EmpleadoCreateDialog({
 
             <div>
               <Label htmlFor="input-required" className="mb-2">
-                Contraseña
+                Contraseña *
               </Label>
               <Input
                 id="input-required"

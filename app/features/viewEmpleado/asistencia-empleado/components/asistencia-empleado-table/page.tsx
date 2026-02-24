@@ -13,7 +13,7 @@ import {
 } from "../../types";
 import { useAsistencias } from "@/app/features/asistencia/hooks/useAsistencia";
 import { columns } from "@/app/features/asistencia/components/asistencia-table/columns";
-import { AsistenciaCreateDialog } from "@/app/features/asistencia/components/asistencia-table/dialogs/create-dialog";
+import { AsistenciaCreateDialog } from "@/app/features/asistencia/components/asistencia-table/dialogs/RegistrarAsistenciaDialog";
 import { AsistenciaDetailsDialog } from "./dialogs/detail-dialog";
 import { DataTable } from "../../../permisos-empleado/data-table/data-table";
 import { AsistenciaEditDialog } from "./dialogs/edit-dialog";
