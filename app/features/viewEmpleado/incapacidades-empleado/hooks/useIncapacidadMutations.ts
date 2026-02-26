@@ -10,20 +10,16 @@ export const useIncapacidadMutations = () => {
    * Mutación para registrar una nueva incapacidad
    */
   const registrarIncapacidad = useMutation({
-    mutationFn: (data: RegistrarIncapacidadDTO) =>
-      incapacidadService.RegistrarIncapacidad(data),
+    mutationFn: (data: RegistrarIncapacidadDTO & { archivo?: File }) => {
+      const { archivo, ...dto } = data;
+      return incapacidadService.registrarIncapacidad(dto, archivo);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });
-      toast.success("Incapacidad registrada correctamente", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.success("Incapacidad registrada correctamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al registrar incapacidad", {
-        position: "top-right",
-        autoClose: 4000,
-      });
+      toast.error(error.message || "Error al registrar incapacidad");
     },
   });
 
@@ -32,19 +28,13 @@ export const useIncapacidadMutations = () => {
    */
   const actualizarIncapacidad = useMutation({
     mutationFn: (dto: ActualizarIncapacidadDTO) =>
-      incapacidadService.ActualizarIncapacidad(dto.incapacidadId, dto),
+      incapacidadService.actualizarIncapacidad(dto.incapacidadId, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });
-      toast.success("Incapacidad actualizada correctamente", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.success("Incapacidad actualizada correctamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al actualizar la incapacidad", {
-        position: "top-right",
-        autoClose: 4000,
-      });
+      toast.error(error.message || "Error al actualizar la incapacidad");
     },
   });
 
@@ -52,19 +42,13 @@ export const useIncapacidadMutations = () => {
    * Eliminar Incapacidad
    */
   const eliminarIncapacidad = useMutation({
-    mutationFn: (id: number) => incapacidadService.EliminarIncapacidad(id),
+    mutationFn: (id: number) => incapacidadService.eliminarIncapacidad(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });
-      toast.success("Incapacidad eliminada correctamente", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.success("Incapacidad eliminada correctamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al eliminar incapacidad", {
-        position: "top-right",
-        autoClose: 4000,
-      });
+      toast.error(error.message || "Error al eliminar incapacidad");
     },
   });
 

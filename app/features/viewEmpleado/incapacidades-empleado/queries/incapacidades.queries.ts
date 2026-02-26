@@ -5,6 +5,6 @@ import incapacidadService from "../services/incapacidad.services";
 export const useIncapacidadQuery = () => {
   return useQuery<Incapacidad[]>({
     queryKey: ["incapacidades"],
-    queryFn: () => incapacidadService.ListarIncapacidades(),
+    queryFn: () => incapacidadService.listarIncapacidades(),
   });
 };

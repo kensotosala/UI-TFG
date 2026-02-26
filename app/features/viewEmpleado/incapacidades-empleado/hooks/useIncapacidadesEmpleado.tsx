@@ -12,55 +12,47 @@ export const useIncapacidadesEmpleado = () => {
     queryKey: ["incapacidades-empleado", user?.employeeId],
     queryFn: async () => {
       if (!user?.employeeId) return [];
-      const todas = await incapacidadService.ListarIncapacidades();
+      const todas = await incapacidadService.listarIncapacidades();
       return todas.filter((inc) => inc.empleadoId === user.employeeId);
     },
     enabled: !!user?.employeeId,
   });
 
   const registrarMutation = useMutation({
-    mutationFn: (data: Omit<RegistrarIncapacidadDTO, "empleadoId">) => {
+    mutationFn: (
+      data: Omit<RegistrarIncapacidadDTO, "empleadoId"> & { archivo?: File },
+    ) => {
       if (!user?.employeeId) {
         throw new Error("No hay empleado autenticado");
       }
-      return incapacidadService.RegistrarIncapacidad({
-        ...data,
-        empleadoId: user.employeeId,
-      });
+
+      const { archivo, ...resto } = data;
+      return incapacidadService.registrarIncapacidad(
+        { ...resto, empleadoId: user.employeeId },
+        archivo,
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["incapacidades-empleado", user?.employeeId],
       });
-      toast.success("Incapacidad registrada", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.success("Incapacidad registrada");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al registrar incapacidad", {
-        position: "top-right",
-        autoClose: 4000,
-      });
+      toast.error(error.message || "Error al registrar incapacidad");
     },
   });
 
   const eliminarMutation = useMutation({
-    mutationFn: (id: number) => incapacidadService.EliminarIncapacidad(id),
+    mutationFn: (id: number) => incapacidadService.eliminarIncapacidad(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["incapacidades-empleado", user?.employeeId],
       });
-      toast.success("Incapacidad eliminada", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.success("Incapacidad eliminada");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al eliminar", {
-        position: "top-right",
-        autoClose: 4000,
-      });
+      toast.error(error.message || "Error al eliminar");
     },
   });
 

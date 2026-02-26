@@ -82,6 +82,7 @@ export const columns = (
       const archivo = row.original.archivoAdjunto;
       if (!archivo) return <span className="text-muted-foreground">-</span>;
 
+      // Ahora archivo ya contiene la URL completa
       return (
         <Button variant="ghost" size="sm" asChild className="h-8 px-2">
           <a

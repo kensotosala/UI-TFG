@@ -7,6 +7,7 @@ import { setupInterceptors } from "./interceptors";
  */
 class ApiClient {
   private static instance: AxiosInstance | null = null;
+  private static baseURL: string;
 
   private constructor() {}
 
@@ -15,9 +16,11 @@ class ApiClient {
    */
   static getInstance(config?: CreateAxiosDefaults): AxiosInstance {
     if (!ApiClient.instance) {
+      ApiClient.baseURL =
+        process.env.NEXT_PUBLIC_API_URL || "https://localhost:7121/api";
+
       ApiClient.instance = axios.create({
-        baseURL:
-          process.env.NEXT_PUBLIC_API_URL || "https://localhost:7121/api",
+        baseURL: ApiClient.baseURL,
         timeout: 10000,
         headers: {
           "Content-Type": "application/json",
@@ -30,6 +33,13 @@ class ApiClient {
     }
 
     return ApiClient.instance;
+  }
+
+  /**
+   * Obtiene la URL base de la API
+   */
+  static getBaseURL(): string {
+    return ApiClient.baseURL;
   }
 
   /**

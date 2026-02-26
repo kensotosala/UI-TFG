@@ -40,7 +40,7 @@ interface IncapacidadCreateDialogEmpleadoProps {
     fechaInicio: string;
     fechaFin: string;
     tipoIncapacidad: string;
-    archivoAdjunto: string | null;
+    archivo?: File;
   }) => Promise<void>;
 }
 
@@ -71,7 +71,7 @@ const incapacidadSchema = z
     tipoIncapacidad: z
       .string()
       .min(1, "Debes seleccionar un tipo de incapacidad"),
-    archivoAdjunto: z.string().optional(),
+    archivoAdjunto: z.any().optional(),
   })
   .refine(
     (data) => {
@@ -102,7 +102,7 @@ export function IncapacidadCreateDialogEmpleado({
       fechaFin: "",
       diagnostico: "",
       tipoIncapacidad: "",
-      archivoAdjunto: "",
+      archivoAdjunto: undefined,
     },
   });
 
@@ -119,7 +119,7 @@ export function IncapacidadCreateDialogEmpleado({
         fechaInicio: values.fechaInicio,
         fechaFin: values.fechaFin,
         tipoIncapacidad: values.tipoIncapacidad,
-        archivoAdjunto: values.archivoAdjunto || null,
+        archivo: values.archivoAdjunto,
       });
       handleClose();
     } catch (error) {
@@ -228,16 +228,19 @@ export function IncapacidadCreateDialogEmpleado({
               name="archivoAdjunto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL del archivo (opcional)</FormLabel>
+                  <FormLabel>Boleta de Incapacidad</FormLabel>
                   <FormControl>
                     <Input
-                      type="url"
-                      placeholder="https://ejemplo.com/incapacidad.pdf"
-                      {...field}
+                      type="file"
+                      accept=".pdf,.jpg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        field.onChange(file);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
-                    Ingresa la URL del archivo de incapacidad
+                    Formatos permitidos: PDF, JPG, PNG
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
