@@ -22,7 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -140,21 +139,6 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       {/* BARRA DE FILTROS */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Buscar por empleado */}
-        <Input
-          placeholder="Buscar empleado..."
-          value={
-            (table.getColumn("empleadoNombre")?.getFilterValue() as string) ??
-            ""
-          }
-          onChange={(event) =>
-            table
-              .getColumn("empleadoNombre")
-              ?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-
         {/* Filtro por estado */}
         <Select
           value={

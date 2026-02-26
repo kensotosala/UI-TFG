@@ -4,12 +4,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useAguinaldoEmpleado } from "../../hooks/useAguinaldoEmpleado";
-import { AguinaldoDTO } from "../../types";
+import { useAguinaldoEmpleado } from "../../../../aguinaldos/hooks/useAguinaldoEmpleado";
+import { AguinaldoDTO } from "../../../../aguinaldos/types";
 
 import { Gift, DollarSign, Calendar, FileText } from "lucide-react";
-import { DataTable } from "./data-table";
+import { DataTable } from "../../../../aguinaldos/components/aguinaldo-table/data-table";
 import { columnsEmpleado } from "./ColumsEmpleadoAguinaldo";
+import { AguinaldoEmpleadoDetailsDialog } from "../dialogs/AguinaldoEmpleadoDetailsDialog";
 
 interface AguinaldoEmpleadoTableProps {
   empleadoId: number;
@@ -159,7 +160,7 @@ export function AguinaldoEmpleadoTable({
       {/* Diálogo */}
       <AguinaldoEmpleadoDetailsDialog
         open={openDetails}
-        onOpenChange={setOpenDetails}
+        onClose={() => setOpenDetails(false)}
         aguinaldo={selected}
       />
     </div>

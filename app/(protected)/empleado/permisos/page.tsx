@@ -1,6 +1,6 @@
 "use client";
 
-import { PermisosEmpleadoTable } from "@/app/features/viewEmpleado/permisos-empleado/data-table/PermisosEmpleadoTable";
+import { PermisosEmpleadoTable } from "@/app/features/VistaEmpleado/permisos-empleado/data-table/PermisosEmpleadoTable";
 
 const PermisosEmpleadoPage = () => {
   return (

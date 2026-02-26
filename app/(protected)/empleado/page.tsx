@@ -1,6 +1,6 @@
 "use client";
 
-import { MarcarAsistenciaCard } from "@/app/features/viewEmpleado/asistencia-empleado/components/MarcarAsistenciaCard";
+import { MarcarAsistenciaCard } from "@/app/features/VistaEmpleado/asistencia-empleado/components/MarcarAsistenciaCard";
 
 export default function EmpleadoDashboard() {
   return (

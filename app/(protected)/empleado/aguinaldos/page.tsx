@@ -1,6 +1,6 @@
 "use client";
 
-import { AguinaldoEmpleadoTable } from "@/app/features/aguinaldos/components/aguinaldo-table/AguinaldoEmpleadoTable";
+import { AguinaldoEmpleadoTable } from "@/app/features/VistaEmpleado/aguinaldo-empleado/components/Tabla/AguinaldoEmpleadoTable";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { Loader2 } from "lucide-react";
 

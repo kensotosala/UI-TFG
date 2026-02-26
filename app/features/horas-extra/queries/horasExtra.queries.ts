@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { horasExtraService } from "../services/horasExtra.service";
 import { HoraExtra, FiltrosHorasExtras, ReporteHorasExtras } from "../types";
-import { HoraExtraHoyDTO } from "../../viewEmpleado/asistencia-empleado/types";
+import { HoraExtraHoyDTO } from "../../VistaEmpleado/asistencia-empleado/types";
 
 export const horasExtraKeys = {
   all: ["horasExtras"] as const,

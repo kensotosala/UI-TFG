@@ -1,4 +1,4 @@
-import { AsistenciasEmpleadoTable } from "@/app/features/viewEmpleado/asistencia-empleado/components/asistencia-empleado-table/data-table";
+import { AsistenciasEmpleadoTable } from "@/app/features/VistaEmpleado/asistencia-empleado/components/asistencia-empleado-table/data-table";
 
 const AsistenciaPage = () => {
   return (

@@ -1,4 +1,4 @@
-import { IncapacidadesEmpleadoTable } from "@/app/features/viewEmpleado/incapacidades-empleado/components/data-table/IncapacidadesEmpleadoTable";
+import { IncapacidadesEmpleadoTable } from "@/app/features/VistaEmpleado/incapacidades-empleado/components/data-table/IncapacidadesEmpleadoTable";
 
 const IncapacidadesPage = () => {
   return (

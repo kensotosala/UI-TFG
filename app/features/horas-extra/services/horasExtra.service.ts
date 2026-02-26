@@ -8,7 +8,7 @@ import {
   FiltrosHorasExtras,
   ReporteHorasExtras,
 } from "../types";
-import { HoraExtraHoyDTO } from "../../viewEmpleado/asistencia-empleado/types";
+import { HoraExtraHoyDTO } from "../../VistaEmpleado/asistencia-empleado/types";
 
 const API_BASE_URL = "https://localhost:7121/api/HorasExtras";
 
