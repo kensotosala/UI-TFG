@@ -108,6 +108,11 @@ const adminMenuGroups = [
         url: "/admin/vacaciones",
         icon: PlaneIcon,
       },
+      {
+        title: "Liquidaciones",
+        url: "/admin/liquidaciones",
+        icon: Briefcase,
+      },
     ],
   },
 ];

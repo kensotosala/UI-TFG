@@ -37,7 +37,6 @@ class VacacionesService {
   async crearSolicitud(
     dto: CrearVacacionDTO,
   ): Promise<ResultDTO<ListarVacacionByIdDTO>> {
-    // ✅ CORRECCIÓN: Agregar el símbolo < antes del generic
     const { data } = await this.apiClient.post<
       ResultDTO<ListarVacacionByIdDTO>
     >(this.basePath, dto);

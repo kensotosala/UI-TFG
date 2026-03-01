@@ -1,5 +1,3 @@
-// src/features/vacaciones/hooks/useVacaciones.ts
-
 import { useVacacionesQuery } from "../queries/vacaciones.queries";
 import {
   useCrearVacacionMutation,
