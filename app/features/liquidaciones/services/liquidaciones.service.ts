@@ -46,6 +46,13 @@ class LiquidacionesService {
     );
     return data;
   }
+
+  async anular(id: number): Promise<ResultDTO<boolean>> {
+    const { data } = await this.apiClient.patch<ResultDTO<boolean>>(
+      `${this.basePath}/${id}/anular`,
+    );
+    return data;
+  }
 }
 
 export const liquidacionesService = new LiquidacionesService();

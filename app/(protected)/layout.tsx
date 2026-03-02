@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import Navbar from "@/components/layout/Navbar";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { usePathname } from "next/navigation";
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
@@ -34,6 +35,7 @@ export default function ProtectedLayout({
           </div>
           <main className="flex-1 p-6 bg-gray-50 overflow-auto">
             {children}
+            <Toaster />
           </main>
         </div>
       </SidebarProvider>

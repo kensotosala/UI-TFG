@@ -2,7 +2,7 @@ export interface Liquidacion {
   id: number;
   empleadoId: number;
   fechaLiquidacion: string;
-  MotivoLiquidacion: TipoDespido;
+  motivoLiquidacion: TipoDespido;
   salarioBase: number;
   vacacionesPendientes: number;
   aguinaldoProporcional: number;
@@ -20,10 +20,11 @@ export enum EstadoLiquidacion {
 }
 
 export enum TipoDespido {
-  DESPIDO_SIN_CAUSA_JUSTIFICADA = "DESPIDO_SIN_CAUSA_JUSTIFICADA",
-  RENUNCIA_VOLUNTARIA = "RENUNCIA_VOLUNTARIA",
-  MUTUO_ACUERDO = "MUTUO_ACUERDO",
-  DESPIDO_CON_CAUSA_JUSTIFICADA = "DESPIDO_CON_CAUSA_JUSTIFICADA",
+  RENUNCIA_RESPONSABILIDAD_PATRONAL = "RENUNCIA_RESPONSABILIDAD_PATRONAL",
+  DESPIDO_RESPONSABILIDAD_PATRONAL = "DESPIDO_RESPONSABILIDAD_PATRONAL",
+  DESPIDO_SIN_RESPONSABILIDAD = "DESPIDO_SIN_RESPONSABILIDAD",
+  RENUNCIA = "RENUNCIA",
+  JUBILACION = "JUBILACION",
 }
 
 export interface LiquidacionDTO {
@@ -34,6 +35,7 @@ export interface LiquidacionDTO {
   montoAguinaldo: number;
   montoCesantia: number;
   montoTotal: number;
+  estado: EstadoLiquidacion;
 }
 
 export interface CrearLiquidacionDTO {

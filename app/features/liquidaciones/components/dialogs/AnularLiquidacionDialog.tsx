@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,58 +7,67 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { IncapacidadDeleteDialogProps } from "../../../types";
 import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
 import { AlertTriangle } from "lucide-react";
+import { LiquidacionDTO } from "../../types";
 
-export function IncapacidadDeleteDialog({
+interface AnularLiquidacionProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  data: LiquidacionDTO | null;
+  isDeleting: boolean;
+  onConfirm: (id: number) => Promise<void>;
+}
+
+export function AnularLiquidacionDialog({
   open,
   onOpenChange,
-  incapacidad,
+  data,
   isDeleting,
   onConfirm,
-}: IncapacidadDeleteDialogProps) {
+}: AnularLiquidacionProps) {
   const { empleados } = useEmpleados();
 
-  if (!incapacidad) return null;
+  const empleado = data
+    ? empleados.find((e) => e.idEmpleado === data.idEmpleado)
+    : null;
 
-  const empleado = empleados.find(
-    (e) => e.idEmpleado === incapacidad.empleadoId,
-  );
+  const nombreEmpleado = empleado
+    ? `${empleado.nombre} ${empleado.primerApellido} ${empleado.segundoApellido || ""}`.trim()
+    : "No encontrado";
 
   const handleConfirm = async () => {
-    await onConfirm(incapacidad.idIncapacidad);
+    if (!data) return;
+    await onConfirm(data.idLiquidacion);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            <DialogTitle>Eliminar Incapacidad</DialogTitle>
+            <DialogTitle>Anular Liquidación</DialogTitle>
           </div>
           <DialogDescription>
-            Esta acción no se puede deshacer. Se eliminará permanentemente el
-            registro de incapacidad.
+            Esta acción no se puede deshacer. Se anulará permanentemente el
+            registro de liquidación.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-4">
           <p className="text-sm">
             <span className="font-medium">Empleado: </span>
-            {empleado
-              ? `${empleado.nombre} ${empleado.primerApellido} ${empleado.segundoApellido || ""}`
-              : "No encontrado"}
+            {nombreEmpleado}
           </p>
           <p className="text-sm">
-            <span className="font-medium">Tipo: </span>
-            {incapacidad.tipoIncapacidad}
-          </p>
-          <p className="text-sm">
-            <span className="font-medium">Estado: </span>
-            {incapacidad.estado}
+            <span className="font-medium">Monto Total: </span>
+            {data
+              ? new Intl.NumberFormat("es-CR", {
+                  style: "currency",
+                  currency: "CRC",
+                }).format(data.montoTotal)
+              : "N/A"}
           </p>
         </div>
 
@@ -72,9 +82,9 @@ export function IncapacidadDeleteDialog({
           <Button
             variant="destructive"
             onClick={handleConfirm}
-            disabled={isDeleting}
+            disabled={isDeleting || !data}
           >
-            {isDeleting ? "Eliminando..." : "Eliminar"}
+            {isDeleting ? "Anulando..." : "Anular"}
           </Button>
         </DialogFooter>
       </DialogContent>
