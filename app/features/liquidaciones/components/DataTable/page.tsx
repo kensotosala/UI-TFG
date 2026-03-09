@@ -7,10 +7,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { NuevaLiquidacionDialog } from "../dialogs/NuevaLiquidacionDialog";
-import { CrearLiquidacionDTO, LiquidacionDTO } from "../../types";
+import {
+  CrearLiquidacionDTO,
+  EditarLiquidacionDTO,
+  LiquidacionDTO,
+} from "../../types";
 import TableHeader from "@/components/TableHeader";
-import { VerDetallesLiquidacion } from "../dialogs/VerDetallesLiquidacion";
+import { VerDetallesLiquidacion } from "../dialogs/VerDetallesLiquidacionDialog";
 import { AnularLiquidacionDialog } from "../dialogs/AnularLiquidacionDialog";
+import EditarLiquidacionDialog from "../dialogs/EditarLiquidacionDialog";
 
 export default function LiquidacionesTable() {
   const {
@@ -20,12 +25,13 @@ export default function LiquidacionesTable() {
     crear,
     anular,
     isAnulando,
-    refetch,
-  } = useLiquidaciones(); // ✅ destructure anular + isAnulando
+    editar,
+  } = useLiquidaciones();
 
   const [openCreate, setOpenCreate] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false); // ✅ removed unused openUpdate
+  const [openDelete, setOpenDelete] = useState(false);
   const [openView, setOpenView] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
 
   const [selectedLiquidacion, setSelectedLiquidacion] =
     useState<LiquidacionDTO | null>(null);
@@ -34,7 +40,6 @@ export default function LiquidacionesTable() {
     try {
       await crear(data);
       setOpenCreate(false);
-      refetch();
     } catch (error) {
       console.error("Error al crear liquidación:", error);
       throw error;
@@ -48,7 +53,17 @@ export default function LiquidacionesTable() {
 
   const handleEditar = (liquidacion: LiquidacionDTO) => {
     setSelectedLiquidacion(liquidacion);
-    // TODO: wire up edit dialog when ready
+    setOpenEdit(true);
+  };
+
+  const handleConfirmarEdicion = async (payload: EditarLiquidacionDTO) => {
+    try {
+      await editar(payload);
+      setOpenEdit(false);
+    } catch (error) {
+      console.error("Error al editar liquidación:", error);
+      throw error;
+    }
   };
 
   const handleEliminar = (liquidacion: LiquidacionDTO) => {
@@ -60,7 +75,6 @@ export default function LiquidacionesTable() {
     try {
       await anular(id);
       setOpenDelete(false);
-      refetch();
     } catch (error) {
       console.error("Error al anular liquidación:", error);
       throw error;
@@ -133,6 +147,13 @@ export default function LiquidacionesTable() {
         data={selectedLiquidacion}
         isDeleting={isAnulando}
         onConfirm={handleAnular}
+      />
+
+      <EditarLiquidacionDialog
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        data={selectedLiquidacion}
+        onEdit={handleConfirmarEdicion}
       />
     </>
   );

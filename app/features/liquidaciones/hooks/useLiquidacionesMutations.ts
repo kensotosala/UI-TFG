@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { liquidacionesService } from "../services/liquidaciones.service";
 import { liquidacionesKeys } from "../liquidaciones.keys";
-import { CrearLiquidacionDTO } from "../types";
+import { CrearLiquidacionDTO, EditarLiquidacionDTO } from "../types";
 import { toast } from "sonner";
 
 export const useLiquidacionesMutations = () => {
@@ -12,9 +12,7 @@ export const useLiquidacionesMutations = () => {
       mutationFn: (payload: CrearLiquidacionDTO) =>
         liquidacionesService.crear(payload),
       onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: liquidacionesKeys.lists(),
-        });
+        queryClient.invalidateQueries({ queryKey: liquidacionesKeys.lists() });
         toast.success("Liquidación registrada correctamente", {
           position: "top-center",
           duration: 3000,
@@ -26,6 +24,17 @@ export const useLiquidacionesMutations = () => {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: liquidacionesKeys.lists() });
         toast.success("Liquidación anulada correctamente", {
+          position: "top-center",
+          duration: 3000,
+        });
+      },
+    }),
+    editar: () => ({
+      mutationFn: (payload: EditarLiquidacionDTO) =>
+        liquidacionesService.editar(payload),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: liquidacionesKeys.lists() });
+        toast.success("Liquidación editada correctamente", {
           position: "top-center",
           duration: 3000,
         });

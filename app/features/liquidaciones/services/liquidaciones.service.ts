@@ -1,5 +1,10 @@
 import ApiClient from "@/lib/api/client";
-import { CrearLiquidacionDTO, LiquidacionDTO, ResultDTO } from "../types";
+import {
+  CrearLiquidacionDTO,
+  EditarLiquidacionDTO,
+  LiquidacionDTO,
+  ResultDTO,
+} from "../types";
 import { AxiosInstance } from "axios";
 
 class LiquidacionesService {
@@ -50,6 +55,16 @@ class LiquidacionesService {
   async anular(id: number): Promise<ResultDTO<boolean>> {
     const { data } = await this.apiClient.patch<ResultDTO<boolean>>(
       `${this.basePath}/${id}/anular`,
+    );
+    return data;
+  }
+
+  async editar(
+    payload: EditarLiquidacionDTO,
+  ): Promise<ResultDTO<LiquidacionDTO>> {
+    const { data } = await this.apiClient.put<ResultDTO<LiquidacionDTO>>(
+      `${this.basePath}/${payload.id}`,
+      payload,
     );
     return data;
   }

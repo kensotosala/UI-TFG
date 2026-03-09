@@ -7,6 +7,7 @@ export const useLiquidaciones = () => {
   const mutations = useLiquidacionesMutations();
   const crearMutation = useMutation(mutations.crear());
   const anularMutation = useMutation(mutations.anular());
+  const editarMutation = useMutation(mutations.editar());
 
   return {
     liquidaciones: listarQuery.data?.datos ?? [],
@@ -14,6 +15,8 @@ export const useLiquidaciones = () => {
     isError: listarQuery.isError,
     crear: crearMutation.mutateAsync,
     isCreating: crearMutation.isPending,
+    editar: editarMutation.mutateAsync,
+    isEditando: editarMutation.isPending,
     anular: anularMutation.mutateAsync,
     isAnulando: anularMutation.isPending,
     refetch: listarQuery.refetch,
