@@ -1,5 +1,4 @@
 import { PermisosTable } from "@/app/features/permisos/components/data-table/page";
-import React from "react";
 
 const PermisosPage = () => {
   return (

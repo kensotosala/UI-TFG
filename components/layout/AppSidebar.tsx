@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Award,
   Briefcase,
   Building2,
   CalendarCheck,
@@ -112,6 +113,11 @@ const adminMenuGroups = [
         title: "Liquidaciones",
         url: "/admin/liquidaciones",
         icon: Briefcase,
+      },
+      {
+        title: "Evaluaciones",
+        url: "/admin/evaluaciones-rendimiento",
+        icon: Award,
       },
     ],
   },
