@@ -101,3 +101,65 @@ export function useDeleteEvaluacionRendimiento() {
     },
   });
 }
+
+export function useAprobarEvaluacionRendimiento() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => evaluacionesRendimientoService.aprobar(id),
+
+    onSuccess: (result, id) => {
+      if (!result.exitoso) {
+        toast.error(result.mensaje ?? "No se pudo aprobar la evaluación.");
+        return;
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: evaluacionesRendimientoKeys.lists(),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: evaluacionesRendimientoKeys.detail(id),
+      });
+
+      toast.success(result.mensaje ?? "Evaluación aprobada exitosamente.");
+    },
+
+    onError: (error: Error) => {
+      toast.error(
+        error.message ?? "Error inesperado al aprobar la evaluación.",
+      );
+    },
+  });
+}
+
+export function useRechazarEvaluacionRendimiento() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => evaluacionesRendimientoService.delete(id),
+
+    onSuccess: (result, id) => {
+      if (!result.exitoso) {
+        toast.error(result.mensaje ?? "No se pudo rechazar la evaluación.");
+        return;
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: evaluacionesRendimientoKeys.lists(),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: evaluacionesRendimientoKeys.detail(id),
+      });
+
+      toast.success(result.mensaje ?? "Evaluación rechazada exitosamente.");
+    },
+
+    onError: (error: Error) => {
+      toast.error(
+        error.message ?? "Error inesperado al rechazar la evaluación.",
+      );
+    },
+  });
+}

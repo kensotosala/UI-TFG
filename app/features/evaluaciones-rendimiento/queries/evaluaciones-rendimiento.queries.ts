@@ -41,3 +41,13 @@ export const fetchEvaluacionRendimientoById = async (id: number) => {
   }
   return result.datos;
 };
+
+export const aprobarEvaluacionRendimiento = async (
+  id: number,
+): Promise<boolean> => {
+  const result = await evaluacionesRendimientoService.aprobar(id);
+  if (!result.exitoso) {
+    throw new Error(result.mensaje ?? `Error al aprobar la evaluación ${id}.`);
+  }
+  return result.datos ?? false;
+};

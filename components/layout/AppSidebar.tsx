@@ -162,6 +162,11 @@ const empleadoMenuGroups = [
         url: "/empleado/vacaciones",
         icon: PlaneIcon,
       },
+      {
+        title: "Mis Evaluaciones",
+        url: "/empleado/evaluaciones-rendimiento",
+        icon: Award,
+      },
     ],
   },
 ];

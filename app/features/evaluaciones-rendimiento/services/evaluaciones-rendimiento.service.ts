@@ -72,4 +72,18 @@ export const evaluacionesRendimientoService = {
     );
     return response.data;
   },
+
+  // evaluaciones-rendimiento.service.ts
+  // Agregar al objeto evaluacionesRendimientoService:
+
+  /**
+   * PATCH /api/v1/EvaluacionesRendimiento/aprobar/:id
+   * Cambia el estado de la evaluación a "APROBADA".
+   */
+  aprobar: async (id: number): Promise<ApiResult<boolean>> => {
+    const response = await apiClient.patch<ApiResult<boolean>>(
+      `${BASE_URL}/aprobar/${id}`,
+    );
+    return response.data;
+  },
 };
