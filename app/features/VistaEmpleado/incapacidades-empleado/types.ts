@@ -3,16 +3,15 @@ export interface Incapacidad {
   empleadoId: number;
   fechaInicio: string;
   fechaFin: string;
-  tipoIncapacidad: string;
+  tipoIncapacidad: TipoIncapacidad;
   diagnostico: string;
   archivoAdjunto?: string;
-  estado: string;
+  estado: EstadoIncapacidad;
   fechaCreacion: string;
   fechaModificacion?: string;
 }
 
 export interface RegistrarIncapacidadDTO {
-  archivoAdjunto: string | null;
   diagnostico: string;
   empleadoId: number;
   fechaFin: string;
@@ -20,14 +19,15 @@ export interface RegistrarIncapacidadDTO {
   tipoIncapacidad: string;
 }
 
+// DTO de actualización: archivoAdjunto opcional
 export interface ActualizarIncapacidadDTO {
-  archivoAdjunto: string;
+  incapacidadId: number;
   diagnostico: string;
   empleadoId: number;
   fechaFin: string;
   fechaInicio: string;
-  incapacidadId: number;
   tipoIncapacidad: string;
+  archivoAdjunto?: string;
 }
 
 export interface IncapacidadDetailsDialogProps {
@@ -47,7 +47,9 @@ export interface IncapacidadDeleteDialogProps {
 export interface IncapacidadCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (data: RegistrarIncapacidadDTO) => Promise<void>;
+  onCreate: (
+    data: Omit<RegistrarIncapacidadDTO, "empleadoId"> & { archivo?: File },
+  ) => Promise<void>;
 }
 
 export interface IncapacidadUpdateDialogProps {

@@ -13,57 +13,49 @@ class IncapacidadService {
 
   constructor() {
     this.apiClient = ApiClient.getInstance();
-
+    // FIX #3: usar URL nativo para parsear correctamente
     const apiURL = ApiClient.getBaseURL();
-    this.baseURL = apiURL.replace(/\/api$/, "");
+    try {
+      const parsed = new URL(apiURL);
+      // Remover el segmento /api del pathname si existe
+      parsed.pathname = parsed.pathname.replace(/\/api\/?$/, "");
+      this.baseURL = parsed.toString().replace(/\/$/, "");
+    } catch {
+      // fallback si no es URL absoluta
+      this.baseURL = apiURL.replace(/\/api\/?$/, "");
+    }
   }
 
-  /**
-   * Procesa una incapacidad para construir la URL completa del archivo adjunto
-   */
   private procesarIncapacidad(incapacidad: Incapacidad): Incapacidad {
-    // Si no hay archivo adjunto, devolver tal cual
-    if (!incapacidad.archivoAdjunto) {
-      return incapacidad;
-    }
+    if (!incapacidad.archivoAdjunto) return incapacidad;
+    if (incapacidad.archivoAdjunto.startsWith("http")) return incapacidad;
 
-    // Si ya es una URL completa (http://, https://), devolver tal cual
-    if (incapacidad.archivoAdjunto.startsWith("http")) {
-      return incapacidad;
-    }
-
-    // Asegurarse de que la ruta comience con /
     const rutaArchivo = incapacidad.archivoAdjunto.startsWith("/")
       ? incapacidad.archivoAdjunto
       : `/${incapacidad.archivoAdjunto}`;
 
-    // Construir la URL completa
-    return {
-      ...incapacidad,
-      archivoAdjunto: `${this.baseURL}${rutaArchivo}`,
-    };
+    return { ...incapacidad, archivoAdjunto: `${this.baseURL}${rutaArchivo}` };
   }
 
-  /**
-   * Procesa un array de incapacidades
-   */
   private procesarIncapacidades(incapacidades: Incapacidad[]): Incapacidad[] {
     return incapacidades.map((inc) => this.procesarIncapacidad(inc));
   }
 
-  /**
-   * Listar las incapacidades
-   * GET /api/v1/Incapacidad
-   */
   async listarIncapacidades(): Promise<Incapacidad[]> {
     const { data } = await this.apiClient.get<Incapacidad[]>(this.basePath);
     return this.procesarIncapacidades(data);
   }
 
-  /**
-   * Obtener incapacidad por ID
-   * GET /api/v1/Incapacidad/{id}
-   */
+  // Endpoint filtrado por empleado — evita traer todos los registros
+  async listarIncapacidadesPorEmpleado(
+    empleadoId: number,
+  ): Promise<Incapacidad[]> {
+    const { data } = await this.apiClient.get<Incapacidad[]>(this.basePath, {
+      params: { empleadoId },
+    });
+    return this.procesarIncapacidades(data);
+  }
+
   async obtenerIncapacidadPorId(id: number): Promise<Incapacidad> {
     const { data } = await this.apiClient.get<Incapacidad>(
       `${this.basePath}/${id}`,
@@ -71,10 +63,6 @@ class IncapacidadService {
     return this.procesarIncapacidad(data);
   }
 
-  /**
-   * Registrar nueva incapacidad
-   * POST /api/v1/Incapacidad
-   */
   async registrarIncapacidad(
     dto: RegistrarIncapacidadDTO,
     archivo?: File,
@@ -95,17 +83,14 @@ class IncapacidadService {
       formData,
       {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": undefined,
         },
       },
     );
+
     return this.procesarIncapacidad(data);
   }
 
-  /**
-   * Actualizar una incapacidad
-   * PUT /api/v1/Incapacidad/{id}
-   */
   async actualizarIncapacidad(
     id: number,
     dto: ActualizarIncapacidadDTO,
@@ -117,10 +102,6 @@ class IncapacidadService {
     return this.procesarIncapacidad(data);
   }
 
-  /**
-   * Eliminar incapacidad
-   * DELETE /api/v1/Incapacidad/{id}
-   */
   async eliminarIncapacidad(id: number): Promise<void> {
     await this.apiClient.delete(`${this.basePath}/${id}`);
   }

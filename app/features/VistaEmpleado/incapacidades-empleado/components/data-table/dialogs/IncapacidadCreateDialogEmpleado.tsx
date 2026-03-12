@@ -54,19 +54,16 @@ const incapacidadSchema = z
       .string()
       .min(1, "La fecha de inicio es obligatoria")
       .refine((fecha) => {
-        const incapacidad = new Date(fecha);
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        return incapacidad >= hoy;
+        // Comparar solo la parte de fecha, sin conversión UTC
+        const hoy = new Date().toISOString().split("T")[0];
+        return fecha >= hoy;
       }, "La fecha no puede ser en el pasado"),
     fechaFin: z
       .string()
       .min(1, "La fecha de finalización es obligatoria")
       .refine((fecha) => {
-        const incapacidad = new Date(fecha);
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        return incapacidad >= hoy;
+        const hoy = new Date().toISOString().split("T")[0];
+        return fecha >= hoy;
       }, "La fecha no puede ser en el pasado"),
     tipoIncapacidad: z
       .string()
