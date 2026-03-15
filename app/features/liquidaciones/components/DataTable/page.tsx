@@ -16,6 +16,8 @@ import TableHeader from "@/components/TableHeader";
 import { VerDetallesLiquidacion } from "../dialogs/VerDetallesLiquidacionDialog";
 import { AnularLiquidacionDialog } from "../dialogs/AnularLiquidacionDialog";
 import EditarLiquidacionDialog from "../dialogs/EditarLiquidacionDialog";
+import { useAuthContext } from "@/components/providers/AuthProvider";
+import { ClipboardList } from "lucide-react";
 
 export default function LiquidacionesTable() {
   const {
@@ -27,6 +29,11 @@ export default function LiquidacionesTable() {
     isAnulando,
     editar,
   } = useLiquidaciones();
+
+  const { user, checkRole } = useAuthContext();
+
+  console.log("Usuario cargado:", user);
+  console.log("checkRole ADMIN:", checkRole("ADMIN"));
 
   const [openCreate, setOpenCreate] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -109,17 +116,35 @@ export default function LiquidacionesTable() {
           <p className="text-muted-foreground mt-2 mb-4">
             Comience creando un nuevo registro
           </p>
-          <Button onClick={() => setOpenCreate(true)}>
-            Crear Primer Registro
-          </Button>
+
+          {checkRole("ADMIN") && (
+            <Button onClick={() => setOpenCreate(true)}>
+              Crear Primer Registro
+            </Button>
+          )}
         </div>
       ) : (
         <>
-          <TableHeader
-            title="Liquidaciones"
-            entity="Liquidación"
-            onAddClick={() => setOpenCreate(true)}
-          />
+          {checkRole("ADMIN") && (
+            <TableHeader
+              title="Liquidaciones"
+              entity="Liquidación"
+              onAddClick={() => setOpenCreate(true)}
+            />
+          )}
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <ClipboardList className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Mis Liquidacions
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Consulta y gestiona tus liquidaciones.
+              </p>
+            </div>
+          </div>
           <div className="container mx-auto py-10">
             <DataTable
               columns={columns(handleVer, handleEditar, handleEliminar)}
@@ -129,11 +154,13 @@ export default function LiquidacionesTable() {
         </>
       )}
 
-      <NuevaLiquidacionDialog
-        open={openCreate}
-        onOpenChange={setOpenCreate}
-        onCreate={handleCreate}
-      />
+      {checkRole("ADMIN") && (
+        <NuevaLiquidacionDialog
+          open={openCreate}
+          onOpenChange={setOpenCreate}
+          onCreate={handleCreate}
+        />
+      )}
 
       <VerDetallesLiquidacion
         open={openView}

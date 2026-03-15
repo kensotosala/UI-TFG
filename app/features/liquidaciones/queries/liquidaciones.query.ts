@@ -10,6 +10,13 @@ export const liquidacionesQueries = {
       staleTime: 1000 * 60 * 5,
     }),
 
+  listarPorEmpleado: (idEmpleado: number) =>
+    queryOptions({
+      queryKey: liquidacionesKeys.detail(idEmpleado),
+      queryFn: () => liquidacionesService.listarPorEmpleado(idEmpleado),
+      staleTime: 1000 * 60 * 5,
+    }),
+
   detalle: (id: number) =>
     queryOptions({
       queryKey: liquidacionesKeys.detail(id),

@@ -163,6 +163,11 @@ const empleadoMenuGroups = [
         icon: PlaneIcon,
       },
       {
+        title: "Mis Liquidaciones",
+        url: "/empleado/liquidaciones",
+        icon: Briefcase,
+      },
+      {
         title: "Mis Evaluaciones",
         url: "/empleado/evaluaciones-rendimiento",
         icon: Award,

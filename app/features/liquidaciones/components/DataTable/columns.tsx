@@ -117,22 +117,23 @@ export const columns = (
                 Ver detalles
               </DropdownMenuItem>
 
-              {liquidacion.estado != "ANULADA" && (
-                <>
-                  <DropdownMenuItem onClick={() => onEditar(liquidacion)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => onEliminar(liquidacion)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Anular
-                  </DropdownMenuItem>
-                </>
-              )}
+              {liquidacion.estado !== "ANULADA" &&
+                liquidacion.estado !== "CALCULADA" && (
+                  <>
+                    <DropdownMenuItem onClick={() => onEditar(liquidacion)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onEliminar(liquidacion)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Anular
+                    </DropdownMenuItem>
+                  </>
+                )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

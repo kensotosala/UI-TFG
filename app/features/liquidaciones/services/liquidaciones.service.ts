@@ -29,6 +29,15 @@ class LiquidacionesService {
     return data;
   }
 
+  async listarPorEmpleado(
+    idEmpleado: number,
+  ): Promise<ResultDTO<LiquidacionDTO[]>> {
+    const { data } = await this.apiClient.get<ResultDTO<LiquidacionDTO[]>>(
+      `${this.basePath}/empleado/${idEmpleado}`,
+    );
+    return data;
+  }
+
   /**
    * Crear una nueva liquidación
    */
