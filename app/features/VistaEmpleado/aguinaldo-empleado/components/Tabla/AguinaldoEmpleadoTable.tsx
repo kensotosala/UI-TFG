@@ -1,167 +1,182 @@
 "use client";
 
+import { useAguinaldoEmpleado } from "@/app/features/aguinaldos/hooks/useAguinaldoEmpleado";
+import { DataTable } from "./data-table";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-
-import { useAguinaldoEmpleado } from "../../../../aguinaldos/hooks/useAguinaldoEmpleado";
-import { AguinaldoDTO } from "../../../../aguinaldos/types";
-
-import { Gift, DollarSign, Calendar, FileText } from "lucide-react";
-import { DataTable } from "../../../../aguinaldos/components/aguinaldo-table/data-table";
+import { AguinaldoDTO } from "@/app/features/aguinaldos/types";
 import { columnsEmpleado } from "./ColumsEmpleadoAguinaldo";
-import { AguinaldoEmpleadoDetailsDialog } from "../dialogs/AguinaldoEmpleadoDetailsDialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, FileDown, FileSpreadsheet, FileText } from "lucide-react";
+import { AguinaldosPDF } from "@/app/features/generar-reportes/components/templates/aguinaldo-pdf";
+import { AguinaldoDetailsDialog } from "@/app/features/aguinaldos/components/aguinaldo-table/dialogs/details-dialog";
 
-interface AguinaldoEmpleadoTableProps {
+type TablaProps = {
   empleadoId: number;
+};
+
+// Feature para exportar en varios formatos (PDF, xlsx, csv)
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `aguinaldos-${date}.${ext}`;
 }
 
-export function AguinaldoEmpleadoTable({
-  empleadoId,
-}: AguinaldoEmpleadoTableProps) {
-  const { aguinaldos, isLoading, stats } = useAguinaldoEmpleado(empleadoId);
-  const [selected, setSelected] = useState<AguinaldoDTO | null>(null);
+function buildSheetData(aguinaldos: AguinaldoDTO[]) {
+  return aguinaldos.map((obj) => ({
+    Empleado: obj.nombreEmpleado,
+    Días: obj.diasTrabajados,
+    "Sal.Promedio": obj.salarioPromedio,
+    Monto: obj.montoAguinaldo,
+    Fecha: obj.fechaPago,
+  }));
+}
+
+function exportToExcel(aguinaldos: AguinaldoDTO[]): void {
+  const data = buildSheetData(aguinaldos);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "aguinaldos");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(aguinaldos: AguinaldoDTO[]): void {
+  const data = buildSheetData(aguinaldos);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function TablaAguinaldosVistaEmpleado({ empleadoId }: TablaProps) {
+  const { aguinaldos, isLoading } = useAguinaldoEmpleado(empleadoId ?? 0);
+
+  // Estados para controlar el comportamiento de los dialogs
   const [openDetails, setOpenDetails] = useState(false);
 
+  // Estado para seleccionar una aguinaldo especifico
+  const [selectedAguinaldo, setSelectedAguinaldo] =
+    useState<AguinaldoDTO | null>(null);
+
+  // Handler para abrir el modal de detalles
   const handleVer = (aguinaldo: AguinaldoDTO) => {
-    setSelected(aguinaldo);
+    setSelectedAguinaldo(aguinaldo);
     setOpenDetails(true);
   };
+
+  // Columnas para el DataTable
+  const columns = columnsEmpleado(handleVer);
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-        <Skeleton className="h-96" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
+  if (!aguinaldos || aguinaldos.length === 0) {
+    return (
+      <>
+        <div className="text-center py-10 border rounded-lg">
+          <h3 className="text-lg font-medium">
+            No tienes registros de aguinaldos
+          </h3>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-blue-200 bg-linear-to-br from-blue-50 to-blue-100">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-blue-900">
-                Total Aguinaldos
-              </CardTitle>
-              <FileText className="h-5 w-5 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-900">
-              {stats.totalAguinaldos}
-            </div>
-            <p className="text-xs text-blue-700 mt-1">Registrados</p>
-          </CardContent>
-        </Card>
+    <div className="container mx-auto py-10">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-semibold">Mis aguinaldos</h1>
 
-        <Card className="border-yellow-200 bg-linear-to-br from-yellow-50 to-yellow-100">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-yellow-900">
-                Pendientes
-              </CardTitle>
-              <Calendar className="h-5 w-5 text-yellow-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-yellow-900">
-              {stats.pendientes}
-            </div>
-            <p className="text-xs text-yellow-700 mt-1">Por pagar</p>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileDown className="h-4 w-4" />
+                Exportar
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
 
-        <Card className="border-green-200 bg-linear-to-br from-green-50 to-green-100">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Total Recibido
-              </CardTitle>
-              <DollarSign className="h-5 w-5 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">
-              ₡
-              {stats.totalRecibido.toLocaleString("es-CR", {
-                maximumFractionDigits: 0,
-              })}
-            </div>
-            <p className="text-xs text-green-700 mt-1">Aguinaldos pagados</p>
-          </CardContent>
-        </Card>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Selecciona un formato
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
 
-        <Card className="border-purple-200 bg-linear-to-br from-purple-50 to-purple-100">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-purple-900">
-                Último Aguinaldo
-              </CardTitle>
-              <Gift className="h-5 w-5 text-purple-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {stats.ultimoAguinaldo ? (
-              <>
-                <div className="text-2xl font-bold text-purple-900">
-                  ₡
-                  {stats.ultimoAguinaldo.montoAguinaldo.toLocaleString(
-                    "es-CR",
-                    { maximumFractionDigits: 0 },
-                  )}
-                </div>
-                <p className="text-xs text-purple-700 mt-1">
-                  {new Date(stats.ultimoAguinaldo.fechaPago!).getFullYear()}
-                </p>
-              </>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                Sin aguinaldos pagados
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              <PDFDownloadLink
+                document={<AguinaldosPDF aguinaldos={aguinaldos} />}
+                fileName={getFileName("pdf")}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                {({ loading }) => (
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                  </DropdownMenuItem>
+                )}
+              </PDFDownloadLink>
+
+              <DropdownMenuItem
+                onSelect={() => exportToExcel(aguinaldos)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                <span>Exportar Excel</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onSelect={() => exportToCSV(aguinaldos)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileDown className="h-4 w-4 text-blue-500" />
+                <span>Exportar CSV</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {/* Tabla */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Mis Aguinaldos</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Historial de aguinaldos recibidos
-          </p>
-        </CardHeader>
-        <CardContent>
-          {aguinaldos.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <Gift className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <h3 className="text-lg font-medium">
-                No hay aguinaldos registrados
-              </h3>
-              <p className="text-muted-foreground mt-2">
-                Tus aguinaldos aparecerán aquí cuando sean generados
-              </p>
-            </div>
-          ) : (
-            <DataTable columns={columnsEmpleado(handleVer)} data={aguinaldos} />
-          )}
-        </CardContent>
-      </Card>
+      {/* Data Table */}
+      <DataTable columns={columns} data={aguinaldos} />
 
-      {/* Diálogo */}
-      <AguinaldoEmpleadoDetailsDialog
+      {/* Dialgos */}
+      <AguinaldoDetailsDialog
         open={openDetails}
-        onClose={() => setOpenDetails(false)}
-        aguinaldo={selected}
+        onOpenChange={(open) => {
+          setOpenDetails(open);
+          if (!open) setSelectedAguinaldo(null);
+        }}
+        aguinaldo={selectedAguinaldo}
       />
     </div>
   );

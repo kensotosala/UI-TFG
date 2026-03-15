@@ -1,6 +1,6 @@
 "use client";
 
-import { AguinaldoEmpleadoTable } from "@/app/features/VistaEmpleado/aguinaldo-empleado/components/Tabla/AguinaldoEmpleadoTable";
+import { TablaAguinaldosVistaEmpleado } from "@/app/features/VistaEmpleado/aguinaldo-empleado/components/Tabla/AguinaldoEmpleadoTable";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { Loader2 } from "lucide-react";
 
@@ -29,7 +29,7 @@ export default function MisAguinaldosPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <AguinaldoEmpleadoTable empleadoId={user.employeeId} />
+      <TablaAguinaldosVistaEmpleado empleadoId={user.employeeId} />
     </div>
   );
 }

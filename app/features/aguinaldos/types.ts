@@ -1,4 +1,3 @@
-// app/features/aguinaldo/aguinaldo.types.ts
 export interface AguinaldoDTO {
   idAguinaldo: number;
   empleadoId: number;
@@ -11,7 +10,8 @@ export interface AguinaldoDTO {
   salarioPromedio: number;
   montoAguinaldo: number;
   fechaPago?: string;
-  estado?: string; // PENDIENTE, PAGADO, ANULADO
+  estado?: string;
+  anio?: string;
   fechaCreacion?: string;
   fechaModificacion?: string;
 }

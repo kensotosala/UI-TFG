@@ -8,15 +8,27 @@ import { AguinaldoDTO } from "../../../../aguinaldos/types";
 export const columnsEmpleado = (
   onVer: (aguinaldo: AguinaldoDTO) => void,
 ): ColumnDef<AguinaldoDTO>[] => [
+  // {
+  //   accessorKey: "anio",
+  //   header: () => <div className="text-center">Año</div>,
+  //   cell: ({ row }) => {
+  //     const value = row.getValue("anio");
+  //     const fecha = new Date(value as number | string);
+  //     const year = fecha.getFullYear();
+
+  //     return (
+  //       <div className="text-center font-semibold">
+  //         {Number.isNaN(year) ? "-" : year}
+  //       </div>
+  //     );
+  //   },
+  // },
   {
-    accessorKey: "fechaCalculo",
+    accessorKey: "anio",
     header: () => <div className="text-center">Año</div>,
-    cell: ({ row }) => {
-      const fecha = new Date(row.original.fechaCalculo);
-      return (
-        <div className="text-center font-semibold ">{fecha.getFullYear()}</div>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="text-center font-semibold">{row.getValue("anio")}</div>
+    ),
   },
   {
     accessorKey: "diasTrabajados",

@@ -77,18 +77,21 @@ function exportToCSV(incapacidades: Incapacidad[]): void {
   URL.revokeObjectURL(url);
 }
 
-// ── Componente ────────────────────────────────────────
-
 export function IncapacidadesEmpleadoTable() {
+  // Hook que trea las incapacidades y la funciones CRUD
   const { incapacidades, isLoading, registrar, eliminar, isEliminando } =
     useIncapacidadesEmpleado();
 
+  // Estados para controlar los dialogs
   const [openCreate, setOpenCreate] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openView, setOpenView] = useState(false);
+
+  // Estado para cuando se selecciona una incapacidad
   const [selectedIncapacidad, setSelectedIncapacidad] =
     useState<Incapacidad | null>(null);
 
+  // Handle para crear
   const handleCreate = async (data: {
     diagnostico: string;
     fechaInicio: string;
