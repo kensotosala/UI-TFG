@@ -9,9 +9,6 @@ import {
 } from "@react-pdf/renderer";
 import { AguinaldoDTO } from "@/app/features/aguinaldos/types";
 
-// FIX #1: Registrar fuente con soporte para ₡ (U+20A1)
-// Roboto cubre el bloque "Currency Symbols" completo.
-// Descarga los archivos o usa una URL pública confiable.
 Font.register({
   family: "Roboto",
   fonts: [
@@ -33,7 +30,7 @@ const styles = StyleSheet.create({
     padding: 40,
     paddingBottom: 60,
     fontSize: 11,
-    fontFamily: "Roboto", // FIX #1: fuente con soporte Unicode
+    fontFamily: "Roboto",
   },
 
   // ── Header ──────────────────────────────────────────
