@@ -9,24 +9,6 @@ import {
   useValidarVacacionMutation,
 } from "./useVacacionesMutations";
 
-/**
- * Hook principal para trabajar con vacaciones
- * Agrupa queries y mutations en un solo hook
- *
- * @example
- * // Uso básico
- * const { vacaciones, isLoading, crear, aprobar } = useVacaciones();
- *
- * // Crear una solicitud
- * crear.mutate({
- *   empleadoId: 5,
- *   fechaInicio: "2026-02-10",
- *   fechaFin: "2026-02-17"
- * });
- *
- * // Aprobar una solicitud
- * aprobar.mutate({ id: 1, jefeId: 3 });
- */
 export const useVacaciones = () => {
   // Query principal (obtener todas las vacaciones)
   const vacacionesQuery = useVacacionesQuery();

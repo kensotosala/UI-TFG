@@ -6,9 +6,8 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const queryClient = new QueryClient();
-
 export function ClientProviders({ children }: { children: ReactNode }) {
+  const queryClient = new QueryClient();
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>

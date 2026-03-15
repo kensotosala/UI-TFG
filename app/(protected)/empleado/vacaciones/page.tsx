@@ -1,4 +1,4 @@
-import { VacacionesEmpleadoTable } from "@/app/features/VistaEmpleado/vacaciones-empleado/components/data-table/VacacionesEmpleadoTable";
+import { VacacionesEmpleadoTable } from "@/app/features/vacaciones/hooks/VacacionesEmpleadoTable";
 
 const VacacionesPage = () => {
   return (
