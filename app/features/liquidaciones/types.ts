@@ -19,6 +19,7 @@ export interface LiquidacionDTO {
   montoCesantia: number;
   montoTotal?: number;
   estado: EstadoLiquidacion;
+  fechaLiquidacion: string;
 }
 
 export interface CrearLiquidacionDTO {

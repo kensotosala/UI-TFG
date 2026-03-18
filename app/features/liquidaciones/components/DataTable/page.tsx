@@ -1,5 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import { useLiquidaciones } from "../../hooks/useLiquidaciones";
@@ -17,7 +20,67 @@ import { VerDetallesLiquidacion } from "../dialogs/VerDetallesLiquidacionDialog"
 import { AnularLiquidacionDialog } from "../dialogs/AnularLiquidacionDialog";
 import EditarLiquidacionDialog from "../dialogs/EditarLiquidacionDialog";
 import { useAuthContext } from "@/components/providers/AuthProvider";
-import { ClipboardList } from "lucide-react";
+import {
+  ChevronDown,
+  ClipboardList,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LiquidacionesPDF } from "@/app/features/generar-reportes/components/templates/liquidaciones-pdf";
+import { useNombreEmpleado } from "@/lib/utils";
+
+// Feature para Exportar en PDF, Excel o CSV
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `liquidaciones-${date}.${ext}`;
+}
+
+function buildSheetData(liquidaciones: LiquidacionDTO[]) {
+  return liquidaciones.map((obj) => ({
+    ID: obj.idLiquidacion,
+    "Monto Preaviso": obj.montoPreaviso,
+    "Monto Vacaciones": obj.montoVacaciones,
+    "Monto Aguinaldo": obj.montoAguinaldo,
+    "Monto Cesantía": obj.montoCesantia,
+    Total: obj.montoTotal,
+    Fecha: obj.fechaLiquidacion,
+  }));
+}
+
+function exportToExcel(liquidaciones: LiquidacionDTO[]): void {
+  const data = buildSheetData(liquidaciones);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "liquidaciones");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(liquidaciones: LiquidacionDTO[]): void {
+  const data = buildSheetData(liquidaciones);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function LiquidacionesTable() {
   const {
@@ -31,6 +94,7 @@ export default function LiquidacionesTable() {
   } = useLiquidaciones();
 
   const { user, checkRole } = useAuthContext();
+  const nombreEmpleado = useNombreEmpleado(user?.employeeId ?? 0);
 
   console.log("Usuario cargado:", user);
   console.log("checkRole ADMIN:", checkRole("ADMIN"));
@@ -132,18 +196,74 @@ export default function LiquidacionesTable() {
               onAddClick={() => setOpenCreate(true)}
             />
           )}
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <ClipboardList className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <ClipboardList className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  Mis Liquidacions
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  Consulta y gestiona tus liquidaciones.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Mis Liquidacions
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Consulta y gestiona tus liquidaciones.
-              </p>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <FileDown className="h-4 w-4" />
+                  Exportar
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Selecciona un formato
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                <PDFDownloadLink
+                  document={
+                    <LiquidacionesPDF
+                      liquidaciones={liquidaciones}
+                      nombreEmpleado={nombreEmpleado}
+                    />
+                  }
+                  fileName={getFileName("pdf")}
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  {({ loading }) => (
+                    <DropdownMenuItem
+                      disabled={loading}
+                      onSelect={(e) => e.preventDefault()}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileText className="h-4 w-4 text-red-500" />
+                      <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                    </DropdownMenuItem>
+                  )}
+                </PDFDownloadLink>
+
+                <DropdownMenuItem
+                  onSelect={() => exportToExcel(liquidaciones)}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  <span>Exportar Excel</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onSelect={() => exportToCSV(liquidaciones)}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <FileDown className="h-4 w-4 text-blue-500" />
+                  <span>Exportar CSV</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="container mx-auto py-10">
             <DataTable
