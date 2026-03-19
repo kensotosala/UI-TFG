@@ -2,106 +2,46 @@
 
 import DisplayDate from "@/components/DisplayDate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   Users,
-  Clock,
   TrendingUp,
   Briefcase,
   Building2,
 } from "lucide-react";
 import { useAuthContext } from "@/components/providers/AuthProvider";
+import { MarcarAsistenciaCard } from "@/app/features/VistaEmpleado/asistencia-empleado/components/MarcarAsistenciaCard";
 
 const Home = () => {
   const { user } = useAuthContext();
 
-  const stats = [
-    {
-      title: "Total Empleados",
-      value: "124",
-      icon: Users,
-      trend: "+12%",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50 dark:bg-blue-950",
-    },
-    {
-      title: "Asistencias Hoy",
-      value: "98",
-      icon: Calendar,
-      trend: "+5%",
-      color: "text-green-600",
-      bgColor: "bg-green-50 dark:bg-green-950",
-    },
-    {
-      title: "Horas Extra",
-      value: "45h",
-      icon: Clock,
-      trend: "-3%",
-      color: "text-orange-600",
-      bgColor: "bg-orange-50 dark:bg-orange-950",
-    },
-    {
-      title: "Departamentos",
-      value: "8",
-      icon: Building2,
-      trend: "0%",
-      color: "text-purple-600",
-      bgColor: "bg-purple-50 dark:bg-purple-950",
-    },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-linear-to-r from-blue-600 to-blue-800 dark:from-blue-700 dark:to-blue-900 rounded-lg p-6 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
-              ¡Bienvenido, {user?.fullName || user?.username}!
-            </h1>
-            <p className="text-blue-100">
-              {user?.employeeCode && `Código: ${user.employeeCode} • `}
-              {user?.roles?.join(", ") || "Usuario"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <DisplayDate />
+      <div className="flex items-center flex-col md:flex-row gap-5">
+        {/* Card azul (más grande) */}
+        <div className="flex-2 bg-linear-to-r from-blue-600 to-blue-800 dark:from-blue-700 dark:to-blue-900 rounded-lg p-6 text-white shadow-lg ">
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                ¡Bienvenido, {user?.fullName || user?.username}!
+              </h1>
+              <p className="text-blue-100">
+                {user?.employeeCode && `Código: ${user.employeeCode} • `}
+                {user?.roles?.join(", ") || "Usuario"}
+              </p>
+            </div>
+
+            <div className="mt-4 text-right">
+              <DisplayDate />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card
-              key={stat.title}
-              className="hover:shadow-md transition-shadow"
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      {stat.title}
-                    </p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <Badge
-                      variant="secondary"
-                      className="mt-2 text-xs font-normal"
-                    >
-                      {stat.trend} vs mes anterior
-                    </Badge>
-                  </div>
-                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {/* Card derecha */}
+        <div className="flex-1">
+          <MarcarAsistenciaCard />
+        </div>
       </div>
 
       {/* Quick Actions */}

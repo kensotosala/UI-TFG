@@ -1,6 +1,9 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { useMemo, useState } from "react";
 import {
   useReactTable,
@@ -18,9 +21,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, ClipboardList } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  ClipboardList,
+  FileDown,
+  ChevronDown,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 import { useEvaluacionesRendimiento } from "@/app/features/evaluaciones-rendimiento/hooks/useEvaluacionesRendimiento";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import type { EvaluacionRendimientoResponse } from "@/app/features/evaluaciones-rendimiento/types";
@@ -28,6 +47,57 @@ import { createEmpleadoColumns } from "./columns";
 import { ApproveDialog } from "./dialogs/approve-dialog";
 import { RejectDialog } from "./dialogs/reject-dialog";
 import { DetailsDialog } from "./dialogs/details-dialgo";
+import { EvaluacionesPDF } from "@/app/features/generar-reportes/components/templates/evaluaciones-pdf";
+
+// Feature para Exportar en PDF, Excel o CSV
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `evaluaciones-${date}.${ext}`;
+}
+
+function buildSheetData(evaluaciones: EvaluacionRendimientoResponse[]) {
+  return evaluaciones.map((obj) => ({
+    ID: obj.idEvaluacion,
+    "ID Empleado": obj.empleadoId,
+    "Nombre Empleado": obj.nombreEmpleado,
+    "Fecha Inicio": obj.fechaInicio,
+    "Fecha Fin": obj.fechaFin,
+    Evaluador: obj.evaluadorId,
+    "Nombre Evaluador": obj.nombreEvaluador,
+    "Puntuacion Total": obj.puntuacionTotal,
+    Comentarios: obj.comentarios,
+    Estado: obj.estado,
+    "Fecha Creacion": obj.fechaCreacion,
+    "Fecha Modificacion": obj.fechaModificacion,
+    Detalles: obj.detalles,
+  }));
+}
+
+function exportToExcel(evaluaciones: EvaluacionRendimientoResponse[]): void {
+  const data = buildSheetData(evaluaciones);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "evaluaciones");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(evaluaciones: EvaluacionRendimientoResponse[]): void {
+  const data = buildSheetData(evaluaciones);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function MisEvaluacionesPage() {
   const { user } = useAuthContext();
@@ -137,53 +207,72 @@ export default function MisEvaluacionesPage() {
   return (
     <div className="container mx-auto py-8 space-y-6">
       {/* ── Header ── */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <ClipboardList className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Mis Evaluaciones
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Consulta y gestiona tus evaluaciones de rendimiento.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Tarjetas de resumen ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {(
-          [
-            { label: "Total", estado: null, color: "bg-muted/50" },
-            {
-              label: "Pendientes",
-              estado: "PENDIENTE",
-              color: "bg-yellow-50 dark:bg-yellow-950/20",
-            },
-            {
-              label: "Aprobadas",
-              estado: "APROBADA",
-              color: "bg-green-50 dark:bg-green-950/20",
-            },
-            {
-              label: "Anuladas",
-              estado: "ANULADA",
-              color: "bg-red-50 dark:bg-red-950/20",
-            },
-          ] as const
-        ).map(({ label, estado, color }) => (
-          <div key={label} className={`rounded-lg border p-4 ${color}`}>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-              {label}
-            </p>
-            <p className="text-2xl font-bold mt-1">
-              {estado === null
-                ? misEvaluaciones.length
-                : misEvaluaciones.filter((e) => e.estado === estado).length}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <ClipboardList className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Mis Evaluaciones
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Consulta y gestiona tus evaluaciones de rendimiento.
             </p>
           </div>
-        ))}
+        </div>
+
+        <div className="flex">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileDown className="h-4 w-4" />
+                Exportar
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Selecciona un formato
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              <PDFDownloadLink
+                document={<EvaluacionesPDF evaluaciones={misEvaluaciones} />}
+                fileName={getFileName("pdf")}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                {({ loading }) => (
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                  </DropdownMenuItem>
+                )}
+              </PDFDownloadLink>
+
+              <DropdownMenuItem
+                onSelect={() => exportToExcel(misEvaluaciones)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                <span>Exportar Excel</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onSelect={() => exportToCSV(misEvaluaciones)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileDown className="h-4 w-4 text-blue-500" />
+                <span>Exportar CSV</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* ── Barra de búsqueda ── */}
