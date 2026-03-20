@@ -15,7 +15,7 @@ import {
   EditarLiquidacionDTO,
   LiquidacionDTO,
 } from "../../types";
-import TableHeader from "@/components/TableHeader";
+
 import { VerDetallesLiquidacion } from "../dialogs/VerDetallesLiquidacionDialog";
 import { AnularLiquidacionDialog } from "../dialogs/AnularLiquidacionDialog";
 import EditarLiquidacionDialog from "../dialogs/EditarLiquidacionDialog";
@@ -189,81 +189,90 @@ export default function LiquidacionesTable() {
         </div>
       ) : (
         <>
-          {checkRole("ADMIN") && (
-            <TableHeader
-              title="Liquidaciones"
-              entity="Liquidación"
-              onAddClick={() => setOpenCreate(true)}
-            />
-          )}
-          <div className="flex items-center gap-3 justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <ClipboardList className="h-6 w-6 text-primary" />
               </div>
+
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
-                  Mis Liquidacions
+                  Mis Liquidaciones
                 </h1>
                 <p className="text-muted-foreground text-sm">
                   Consulta y gestiona tus liquidaciones.
                 </p>
               </div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <FileDown className="h-4 w-4" />
-                  Exportar
-                  <ChevronDown className="h-4 w-4 opacity-50" />
+
+            {checkRole("ADMIN") && (
+              <div className="flex-1 flex justify-end">
+                <Button
+                  style={{ backgroundColor: "#052940" }}
+                  onClick={() => setOpenCreate(true)}
+                >
+                  Agregar Liquidación
                 </Button>
-              </DropdownMenuTrigger>
+              </div>
+            )}
 
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                  Selecciona un formato
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+            <div className="flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <FileDown className="h-4 w-4" />
+                    Exportar
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
 
-                <PDFDownloadLink
-                  document={
-                    <LiquidacionesPDF
-                      liquidaciones={liquidaciones}
-                      nombreEmpleado={nombreEmpleado}
-                    />
-                  }
-                  fileName={getFileName("pdf")}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  {({ loading }) => (
-                    <DropdownMenuItem
-                      disabled={loading}
-                      onSelect={(e) => e.preventDefault()}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <FileText className="h-4 w-4 text-red-500" />
-                      <span>{loading ? "Generando..." : "Exportar PDF"}</span>
-                    </DropdownMenuItem>
-                  )}
-                </PDFDownloadLink>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Selecciona un formato
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
 
-                <DropdownMenuItem
-                  onSelect={() => exportToExcel(liquidaciones)}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                  <span>Exportar Excel</span>
-                </DropdownMenuItem>
+                  <PDFDownloadLink
+                    document={
+                      <LiquidacionesPDF
+                        liquidaciones={liquidaciones}
+                        nombreEmpleado={nombreEmpleado}
+                        isAdmin={checkRole("ADMIN")}
+                      />
+                    }
+                    fileName={getFileName("pdf")}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    {({ loading }) => (
+                      <DropdownMenuItem
+                        disabled={loading}
+                        onSelect={(e) => e.preventDefault()}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4 text-red-500" />
+                        <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                      </DropdownMenuItem>
+                    )}
+                  </PDFDownloadLink>
 
-                <DropdownMenuItem
-                  onSelect={() => exportToCSV(liquidaciones)}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <FileDown className="h-4 w-4 text-blue-500" />
-                  <span>Exportar CSV</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    onSelect={() => exportToExcel(liquidaciones)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                    <span>Exportar Excel</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onSelect={() => exportToCSV(liquidaciones)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileDown className="h-4 w-4 text-blue-500" />
+                    <span>Exportar CSV</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
           <div className="container mx-auto py-10">
             <DataTable

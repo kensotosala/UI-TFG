@@ -79,29 +79,19 @@ export interface EmpleadoAsistencia {
   avatarUrl?: string;
 }
 
-/**
- * Asistencia completa con datos del empleado
- */
 export interface AsistenciaDetallada extends Asistencia {
   empleado: EmpleadoAsistencia;
 }
 
-/**
- * Payload para crear una nueva asistencia
- * ✅ CORREGIDO: empleadoId ahora acepta string o number
- */
 export interface CrearAsistenciaDTO {
-  empleadoId: string | number; // ✅ Acepta ambos tipos
-  fechaRegistro: string; // ✅ CORREGIDO: era "fecha", ahora "fechaRegistro"
+  empleadoId: string | number;
+  fechaRegistro: string;
   horaEntrada?: string;
   horaSalida?: string;
   estado: EstadoAsistencia;
-  observaciones?: string; // ✅ AGREGADO: campo opcional
+  observaciones?: string;
 }
 
-/**
- * Payload para actualizar asistencia
- */
 export interface ActualizarAsistenciaDTO {
   horaEntrada?: string;
   horaSalida?: string;
@@ -110,9 +100,6 @@ export interface ActualizarAsistenciaDTO {
   justificacion?: Justificacion;
 }
 
-/**
- * Filtros para consultar asistencias
- */
 export interface FiltrosAsistencia {
   empleadoId?: string;
   fechaInicio?: string;
@@ -123,9 +110,6 @@ export interface FiltrosAsistencia {
   limit?: number;
 }
 
-/**
- * Respuesta paginada de asistencias
- */
 export interface AsistenciasResponse {
   data: AsistenciaDetallada[];
   total: number;
@@ -134,9 +118,6 @@ export interface AsistenciasResponse {
   totalPages: number;
 }
 
-/**
- * Resumen de asistencias por empleado
- */
 export interface ResumenAsistencia {
   empleadoId: string;
   empleado: EmpleadoAsistencia;
@@ -154,18 +135,15 @@ export interface ResumenAsistencia {
     vacaciones: number;
     licenciasMedicas: number;
   };
-  horasTotales: number; // en minutos
-  horasExtra: number; // en minutos
-  porcentajeAsistencia: number; // 0-100
+  horasTotales: number;
+  horasExtra: number;
+  porcentajeAsistencia: number;
 }
 
-/**
- * Registro rápido de entrada/salida
- */
 export interface RegistroAsistencia {
   empleadoId: string;
   tipo: "ENTRADA" | "SALIDA";
-  timestamp: string; // ISO 8601
+  timestamp: string;
   ubicacion?: {
     latitud: number;
     longitud: number;
@@ -196,7 +174,7 @@ export interface AsistenciaFormProps {
   asistencia?: Asistencia;
   empleados: EmpleadoAsistencia[];
   onSubmit: (
-    data: CrearAsistenciaDTO | ActualizarAsistenciaDTO
+    data: CrearAsistenciaDTO | ActualizarAsistenciaDTO,
   ) => Promise<void>;
   onCancel: () => void;
 }

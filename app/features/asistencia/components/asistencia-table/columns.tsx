@@ -1,5 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-// components/asistencias/columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";

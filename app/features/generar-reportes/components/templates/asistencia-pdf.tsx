@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
   },
 
-  // ── Header ──────────────────────────────────────────
+  // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -151,11 +151,13 @@ function formatDate(dateStr: string): string {
 interface AsistenciaPDFProps {
   asistencias: AsistenciaDetallada[];
   nombreEmpleado?: string;
+  isAdmin: boolean;
 }
 
 export const AsistenciaPDF = ({
   asistencias,
   nombreEmpleado = "Empleado",
+  isAdmin,
 }: AsistenciaPDFProps) => {
   const today = new Date().toLocaleDateString("es-ES", {
     day: "2-digit",
@@ -204,6 +206,7 @@ export const AsistenciaPDF = ({
         <View style={styles.tableContainer}>
           {/* Encabezados */}
           <View style={styles.tableHeader}>
+            {isAdmin && <Text style={styles.tableHeaderCell}>Empleado</Text>}
             <Text style={styles.tableHeaderCell}>Fecha</Text>
             <Text style={styles.tableHeaderCell}>Entrada</Text>
             <Text style={styles.tableHeaderCell}>Salida</Text>
@@ -217,6 +220,9 @@ export const AsistenciaPDF = ({
               key={i}
               style={[styles.tableRow, i % 2 === 0 ? styles.tableRowEven : {}]}
             >
+              {isAdmin && (
+                <Text style={styles.tableCell}>{a.empleadoId ?? "-"}</Text>
+              )}
               <Text style={styles.tableCell}>{formatDate(a.fecha)}</Text>
               <Text style={styles.tableCell}>{a.horaEntrada ?? "-"}</Text>
               <Text style={styles.tableCell}>{a.horaSalida ?? "-"}</Text>

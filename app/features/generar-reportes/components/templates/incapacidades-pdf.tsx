@@ -2,9 +2,9 @@ import React from "react";
 import { Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
 import {
   EstadoIncapacidad,
+  Incapacidad,
   TipoIncapacidad,
 } from "@/app/features/incapacidades/types";
-import { Incapacidad } from "@/app/features/VistaEmpleado/incapacidades-empleado/types";
 
 const styles = StyleSheet.create({
   page: {
@@ -208,27 +208,19 @@ function getTipoStyle(tipo: TipoIncapacidad) {
 interface IncapacidadesPDFProps {
   incapacidades: Incapacidad[];
   nombreEmpleado?: string;
+  isAdmin?: boolean;
 }
 
 export const IncapacidadesPDF = ({
   incapacidades,
   nombreEmpleado = "Empleado",
+  isAdmin,
 }: IncapacidadesPDFProps) => {
   const today = new Date().toLocaleDateString("es-CR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
-
-  const total = incapacidades.length;
-  const activas = incapacidades.filter((i) => i.estado === "ACTIVA").length;
-  const finalizadas = incapacidades.filter(
-    (i) => i.estado === "FINALIZADA",
-  ).length;
-  const totalDias = incapacidades.reduce(
-    (sum, i) => sum + calcularDias(i.fechaInicio, i.fechaFin),
-    0,
-  );
 
   return (
     <Document>
@@ -247,29 +239,14 @@ export const IncapacidadesPDF = ({
           </View>
         </View>
 
-        {/* ── RESUMEN ── */}
-        <View style={styles.summaryBox}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{total}</Text>
-            <Text style={styles.summaryLabel}>Total</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{activas}</Text>
-            <Text style={styles.summaryLabel}>Activas</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{finalizadas}</Text>
-            <Text style={styles.summaryLabel}>Finalizadas</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{totalDias}</Text>
-            <Text style={styles.summaryLabel}>Días Total</Text>
-          </View>
-        </View>
-
         {/* ── TABLA ── */}
         <View style={styles.tableContainer}>
           <View style={styles.tableHeader}>
+            {isAdmin && (
+              <Text style={[styles.tableHeaderCell, styles.colDiagnostico]}>
+                Empleado
+              </Text>
+            )}
             <Text style={[styles.tableHeaderCell, styles.colDiagnostico]}>
               Diagnóstico
             </Text>
@@ -290,6 +267,11 @@ export const IncapacidadesPDF = ({
               style={[styles.tableRow, i % 2 === 0 ? styles.tableRowEven : {}]}
               wrap={false}
             >
+              {isAdmin && (
+                <Text style={[styles.tableCell, styles.colDiagnostico]}>
+                  {inc.empleadoId}
+                </Text>
+              )}
               <Text style={[styles.tableCell, styles.colDiagnostico]}>
                 {inc.diagnostico}
               </Text>

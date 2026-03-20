@@ -1,5 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -11,6 +14,7 @@ import {
   CrearAsistenciaDTO,
   ActualizarAsistenciaDTO,
   FiltrosAsistencia,
+  Asistencia,
 } from "../../types";
 import { useAsistencias } from "../../hooks/useAsistencia";
 import { AsistenciaCreateDialog } from "./dialogs/RegistrarAsistenciaDialog";
@@ -19,6 +23,58 @@ import { AsistenciaEditDialog } from "./dialogs/edit-dialog";
 import { AsistenciaDeleteDialog } from "./dialogs/delete-dialog";
 import { AsistenciaJustificarDialog } from "./dialogs/justify-dialog";
 import { columns } from "./columns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FileDown, ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
+import { AsistenciaPDF } from "@/app/features/generar-reportes/components/templates/asistencia-pdf";
+
+// Feature para Exportar en PDF, Excel o CSV
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `asistencia-${date}.${ext}`;
+}
+
+function buildSheetData(asistencia: Asistencia[]) {
+  return asistencia.map((obj) => ({
+    Empleado: obj.empleadoId,
+    Fecha: obj.fecha,
+    "Hora Entrada": obj.horaEntrada,
+    "Hora Salida": obj.horaSalida,
+    Estado: obj.estado,
+  }));
+}
+
+function exportToExcel(asistencia: AsistenciaDetallada[]): void {
+  const data = buildSheetData(asistencia);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "asistencia");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(asistencia: AsistenciaDetallada[]): void {
+  const data = buildSheetData(asistencia);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function AsistenciasTable() {
   const [filtros] = useState<FiltrosAsistencia>({
@@ -169,12 +225,66 @@ export function AsistenciasTable() {
 
   return (
     <>
-      <TableHeader
-        title="Asistencias"
-        entity="Asistencia"
-        onAddClick={() => setOpenCreate(true)}
-      />
+      <div className="flex justify-between gap-5">
+        <div className="flex-1">
+          <TableHeader
+            title="Asistencias"
+            entity="Asistencia"
+            onAddClick={() => setOpenCreate(true)}
+          />
+        </div>
+        <div className="">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileDown className="h-4 w-4" />
+                Exportar
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
 
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Selecciona un formato
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              <PDFDownloadLink
+                document={<AsistenciaPDF asistencias={asistencias} isAdmin />}
+                fileName={getFileName("pdf")}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                {({ loading }) => (
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                  </DropdownMenuItem>
+                )}
+              </PDFDownloadLink>
+
+              <DropdownMenuItem
+                onSelect={() => exportToExcel(asistencias)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                <span>Exportar Excel</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onSelect={() => exportToCSV(asistencias)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileDown className="h-4 w-4 text-blue-500" />
+                <span>Exportar CSV</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
       <DataTable columns={tableColumns} data={asistencias} />
 
       {/* DIÁLOGOS */}

@@ -168,11 +168,13 @@ function formatMoney(amount?: number) {
 interface NominaPDFProps {
   nominas: NominaDTO[];
   nombreEmpleado?: string;
+  isAdmin?: boolean;
 }
 
 export const NominaPDF = ({
   nominas,
   nombreEmpleado = "Empleado",
+  isAdmin,
 }: NominaPDFProps) => {
   const today = new Date().toLocaleDateString("es-CR", {
     day: "2-digit",
@@ -233,6 +235,11 @@ export const NominaPDF = ({
         {/* ── TABLA ── */}
         <View style={styles.tableContainer}>
           <View style={styles.tableHeader}>
+            {isAdmin ?? (
+              <Text style={[styles.tableHeaderCell, styles.colPeriodo]}>
+                Empleado
+              </Text>
+            )}
             <Text style={[styles.tableHeaderCell, styles.colPeriodo]}>
               Período
             </Text>
@@ -251,6 +258,11 @@ export const NominaPDF = ({
               key={i}
               style={[styles.tableRow, i % 2 === 0 ? styles.tableRowEven : {}]}
             >
+              {isAdmin ?? (
+                <Text style={[styles.tableCell, styles.colPeriodo]}>
+                  {n.nombreEmpleado ?? "-"}
+                </Text>
+              )}
               <Text style={[styles.tableCell, styles.colPeriodo]}>
                 {n.periodoNomina ?? "-"}
               </Text>

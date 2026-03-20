@@ -2,13 +2,13 @@ export interface Incapacidad {
   archivoAdjunto: string;
   diagnostico: string;
   empleadoId: number;
-  estado: string;
+  estado: EstadoIncapacidad; // ✅
   fechaCreacion: string;
   fechaFin: string;
   fechaInicio: string;
   fechaModificacion: string;
   idIncapacidad: number;
-  tipoIncapacidad: string;
+  tipoIncapacidad: TipoIncapacidad;
 }
 
 export interface RegistrarIncapacidadDTO {

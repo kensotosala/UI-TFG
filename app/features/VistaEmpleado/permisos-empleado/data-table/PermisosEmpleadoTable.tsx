@@ -1,4 +1,3 @@
-// permisos-empleado-table.tsx
 "use client";
 
 import { useState } from "react";

@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Anchos de columna — 5 columnas que suman flex total consistente
   colEmpleado: { flex: 2.2 },
   colDias: { flex: 0.7 },
   colSalario: { flex: 1.3 },
@@ -187,6 +186,7 @@ function formatMoney(amount: number): string {
 interface AguinaldosPDFProps {
   aguinaldos: AguinaldoDTO[];
   anio?: number;
+  isAdmin?: boolean;
 }
 
 export const AguinaldosPDF = ({ aguinaldos, anio }: AguinaldosPDFProps) => {
@@ -229,7 +229,7 @@ export const AguinaldosPDF = ({ aguinaldos, anio }: AguinaldosPDFProps) => {
             <Text style={[styles.tableHeaderCell, styles.colEmpleado]}>
               Empleado
             </Text>
-            <Text style={[styles.tableHeaderCell, styles.colDias]}>Días</Text>
+            ={" "}
             <Text style={[styles.tableHeaderCell, styles.colSalario]}>
               Sal. Promedio
             </Text>
@@ -247,9 +247,6 @@ export const AguinaldosPDF = ({ aguinaldos, anio }: AguinaldosPDFProps) => {
             >
               <Text style={[styles.tableCell, styles.colEmpleado]}>
                 {a.nombreEmpleado ?? "-"}
-              </Text>
-              <Text style={[styles.tableCell, styles.colDias]}>
-                {a.diasTrabajados}
               </Text>
               <Text style={[styles.tableCell, styles.colSalario]}>
                 {formatMoney(a.salarioPromedio)}

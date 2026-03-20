@@ -173,11 +173,13 @@ function getEstadoStyle(estado?: string | null) {
 interface PermisosPDFProps {
   permisos: Permiso[];
   nombreEmpleado?: string;
+  isAdmin?: boolean;
 }
 
 export const PermisosPDF = ({
   permisos,
   nombreEmpleado = "Empleado",
+  isAdmin,
 }: PermisosPDFProps) => {
   const today = new Date().toLocaleDateString("es-CR", {
     day: "2-digit",
@@ -242,6 +244,11 @@ export const PermisosPDF = ({
         <View style={styles.tableContainer}>
           {/* Encabezados */}
           <View style={styles.tableHeader}>
+            {isAdmin && (
+              <Text style={[styles.tableHeaderCell, styles.colMotivo]}>
+                Empleado
+              </Text>
+            )}
             <Text style={[styles.tableHeaderCell, styles.colFechaPermiso]}>
               Fecha Permiso
             </Text>
@@ -267,6 +274,11 @@ export const PermisosPDF = ({
               style={[styles.tableRow, i % 2 === 0 ? styles.tableRowEven : {}]}
               wrap={false}
             >
+              {isAdmin && (
+                <Text style={[styles.tableCell, styles.colMotivo]}>
+                  {p.empleadoId}
+                </Text>
+              )}
               <Text style={[styles.tableCell, styles.colFechaPermiso]}>
                 {formatDate(p.fechaPermiso)}
               </Text>

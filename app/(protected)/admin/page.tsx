@@ -2,15 +2,10 @@
 
 import DisplayDate from "@/components/DisplayDate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Calendar,
-  Users,
-  TrendingUp,
-  Briefcase,
-  Building2,
-} from "lucide-react";
+import { Calendar, Users, Briefcase, Building2 } from "lucide-react";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { MarcarAsistenciaCard } from "@/app/features/VistaEmpleado/asistencia-empleado/components/MarcarAsistenciaCard";
+import RecentActivity from "@/components/RecentActivity";
 
 const Home = () => {
   const { user } = useAuthContext();
@@ -104,42 +99,7 @@ const Home = () => {
       </div>
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Actividad Reciente
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              <p className="text-sm flex-1">
-                <span className="font-medium">Juan Pérez</span> registró su
-                entrada
-              </p>
-              <span className="text-xs text-muted-foreground">Hace 5 min</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-              <p className="text-sm flex-1">
-                <span className="font-medium">María García</span> solicitó
-                permiso
-              </p>
-              <span className="text-xs text-muted-foreground">Hace 15 min</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-              <p className="text-sm flex-1">
-                <span className="font-medium">Carlos López</span> registró horas
-                extra
-              </p>
-              <span className="text-xs text-muted-foreground">Hace 1 hora</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <RecentActivity />
     </div>
   );
 };

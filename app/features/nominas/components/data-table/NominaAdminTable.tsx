@@ -1,12 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "./data-table";
-import { Calendar } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 import { useNomina } from "../../hooks/useNomina";
 import { NominaDTO } from "../../nomina.types";
 import { columns } from "./nomina-columns";
@@ -15,7 +21,80 @@ import { NominaDetailsDialog } from "./dialogs/nomina-details-dialog";
 import { NominaAnularDialog } from "./dialogs/nomina-anular-dialog";
 import { nominaService } from "../../services/nomina.service";
 import { toast } from "sonner";
-import { format, isAfter, startOfDay } from "date-fns";
+import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { NominaPDF } from "@/app/features/generar-reportes/components/templates/nomina-pdf";
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
+function obtenerQuincenaPendiente(): {
+  quincena: 1 | 2;
+  mes: number;
+  anio: number;
+} {
+  const hoy = new Date();
+  const dia = hoy.getDate();
+  const mes = hoy.getMonth() + 1; // 1-12
+  const anio = hoy.getFullYear();
+
+  if (dia >= 16) {
+    return { quincena: 1, mes, anio };
+  } else {
+    const mesAnterior = mes === 1 ? 12 : mes - 1;
+    const anioAnterior = mes === 1 ? anio - 1 : anio;
+    return { quincena: 2, mes: mesAnterior, anio: anioAnterior };
+  }
+}
+
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string) {
+  const date = new Date().toISOString().split("T")[0];
+  return `nominas-${date}.${ext}`;
+}
+
+function buildSheetData(nominas: NominaDTO[]) {
+  return nominas.map((n) => ({
+    Empleado: n.nombreEmpleado ?? "-",
+    Período: n.periodoNomina ?? "-",
+    "Fecha Pago": n.fechaPago ?? "-",
+    "Salario Bruto": n.totalBruto ?? 0,
+    Deducciones: n.deducciones ?? 0,
+    "Total Neto": n.totalNeto ?? 0,
+    Estado: n.estado ?? "-",
+  }));
+}
+
+function exportToExcel(nominas: NominaDTO[]) {
+  const data = buildSheetData(nominas);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Nóminas");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(nominas: NominaDTO[]) {
+  const data = buildSheetData(nominas);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function NominaAdminTable() {
   const [quincenaFilter, setQuincenaFilter] = useState<number | undefined>(
@@ -37,84 +116,48 @@ export function NominaAdminTable() {
   const [openAnular, setOpenAnular] = useState(false);
   const [selectedNomina, setSelectedNomina] = useState<NominaDTO | null>(null);
 
-  useEffect(() => {
-    const verificarYGenerarNominas = async () => {
-      const hoy = startOfDay(new Date());
-      const diaActual = hoy.getDate();
-      const mesActual = hoy.getMonth() + 1;
-      const anioActual = hoy.getFullYear();
+  const verificarYGenerarQuincenaPendiente = useCallback(async () => {
+    const { quincena, mes, anio } = obtenerQuincenaPendiente();
 
-      const generacionPendiente = localStorage.getItem(
-        `nomina_generada_${anioActual}_${mesActual}`,
+    const storageKey = `nomina_verificada_${anio}_${mes}_q${quincena}`;
+    if (sessionStorage.getItem(storageKey)) return;
+
+    try {
+      const nominasExistentes = await nominaService.obtenerNominasQuincena(
+        quincena,
+        mes,
+        anio,
       );
 
-      if (generacionPendiente) {
-        const { quincena1, quincena2 } = JSON.parse(generacionPendiente);
-
-        if (diaActual === 16 && !quincena1) {
-          try {
-            await nominaService.generarNominaQuincenal({
-              quincena: 1,
-              mes: mesActual,
-              anio: anioActual,
-              fechaPago: format(new Date(), "yyyy-MM-dd"),
-              empleadosIds: undefined,
-            });
-
-            localStorage.setItem(
-              `nomina_generada_${anioActual}_${mesActual}`,
-              JSON.stringify({ quincena1: true, quincena2 }),
-            );
-
-            toast.success("Nómina generada automáticamente", {
-              description: "Primera quincena generada exitosamente",
-            });
-
-            refetch();
-          } catch (error) {
-            console.error("Error generando primera quincena:", error);
-          }
-        }
-
-        const primerDiaMesSiguiente = new Date(anioActual, mesActual, 1);
-        const esPrimerDiaMesSiguiente =
-          isAfter(hoy, primerDiaMesSiguiente) ||
-          hoy.getTime() === primerDiaMesSiguiente.getTime();
-
-        if (esPrimerDiaMesSiguiente && !quincena2) {
-          try {
-            await nominaService.generarNominaQuincenal({
-              quincena: 2,
-              mes: mesActual - 1 || 12,
-              anio: mesActual === 1 ? anioActual - 1 : anioActual,
-              fechaPago: format(new Date(), "yyyy-MM-dd"),
-              empleadosIds: undefined,
-            });
-
-            localStorage.setItem(
-              `nomina_generada_${anioActual}_${mesActual}`,
-              JSON.stringify({ quincena1, quincena2: true }),
-            );
-
-            toast.success("Nómina generada automáticamente", {
-              description: "Segunda quincena generada exitosamente",
-            });
-
-            refetch();
-          } catch (error) {
-            console.error("Error generando segunda quincena:", error);
-          }
-        }
-      } else {
-        localStorage.setItem(
-          `nomina_generada_${anioActual}_${mesActual}`,
-          JSON.stringify({ quincena1: false, quincena2: false }),
-        );
+      if (nominasExistentes && nominasExistentes.length > 0) {
+        sessionStorage.setItem(storageKey, "ok");
+        return;
       }
-    };
 
-    verificarYGenerarNominas();
+      await nominaService.generarNominaQuincenal({
+        quincena,
+        mes,
+        anio,
+        fechaPago: format(new Date(), "yyyy-MM-dd"),
+        empleadosIds: undefined,
+      });
+
+      sessionStorage.setItem(storageKey, "ok");
+
+      toast.success("Nómina generada automáticamente", {
+        description: `Quincena ${quincena} de ${mes.toString().padStart(2, "0")}/${anio} generada exitosamente.`,
+      });
+
+      refetch();
+    } catch (error) {
+      sessionStorage.setItem(storageKey, "error");
+      console.error("Error al verificar/generar nómina pendiente:", error);
+    }
   }, [refetch]);
+
+  useEffect(() => {
+    verificarYGenerarQuincenaPendiente();
+  }, [verificarYGenerarQuincenaPendiente]);
 
   const handleAnular = async (id: number) => {
     try {
@@ -142,15 +185,15 @@ export function NominaAdminTable() {
     if (
       estadoFilter !== "TODOS" &&
       nomina.estado?.toUpperCase() !== estadoFilter
-    ) {
+    )
       return false;
-    }
 
     if (searchFilter) {
       const search = searchFilter.toLowerCase();
-      const matchNombre = nomina.nombreEmpleado?.toLowerCase().includes(search);
-      const matchCodigo = nomina.codigoEmpleado?.toLowerCase().includes(search);
-      return matchNombre || matchCodigo;
+      return (
+        nomina.nombreEmpleado?.toLowerCase().includes(search) ||
+        nomina.codigoEmpleado?.toLowerCase().includes(search)
+      );
     }
 
     return true;
@@ -182,15 +225,75 @@ export function NominaAdminTable() {
                   {nominasFiltradas.length} de {nominas?.length || 0} nóminas
                 </p>
               </div>
+              <div className="flex gap-4">
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <FileDown className="h-4 w-4" />
+                        Exportar
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
 
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={() => setOpenGenerate(true)}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Generar Quincena
-                </Button>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                        Selecciona un formato
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+
+                      {/* PDF */}
+                      <PDFDownloadLink
+                        document={<NominaPDF nominas={nominas} isAdmin />}
+                        fileName={getFileName("pdf")}
+                        style={{ textDecoration: "none", color: "inherit" }}
+                      >
+                        {({ loading }) => (
+                          <DropdownMenuItem
+                            disabled={loading}
+                            onSelect={(e) => e.preventDefault()}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <FileText className="h-4 w-4 text-red-500" />
+                            <span>
+                              {loading ? "Generando..." : "Exportar PDF"}
+                            </span>
+                          </DropdownMenuItem>
+                        )}
+                      </PDFDownloadLink>
+
+                      {/* Excel */}
+                      <DropdownMenuItem
+                        onSelect={() => exportToExcel(nominas)}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                        <span>Exportar Excel</span>
+                      </DropdownMenuItem>
+
+                      {/* CSV */}
+                      <DropdownMenuItem
+                        onSelect={() => exportToCSV(nominas)}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <FileDown className="h-4 w-4 text-blue-500" />
+                        <span>Exportar CSV</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={() => setOpenGenerate(true)}
+                    className="gap-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Generar Quincena
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -203,8 +306,8 @@ export function NominaAdminTable() {
                 No hay nóminas registradas
               </h3>
               <p className="text-muted-foreground mt-2 mb-4">
-                Las nóminas se generan automáticamente los días 16 y 1 de cada
-                mes, o puedes generarlas manualmente
+                Las nóminas se generan automáticamente o puedes generarlas
+                manualmente.
               </p>
               <Button
                 onClick={() => setOpenGenerate(true)}

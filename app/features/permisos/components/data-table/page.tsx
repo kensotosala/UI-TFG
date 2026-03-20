@@ -1,5 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -22,6 +25,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
@@ -32,6 +43,50 @@ import { PermisoEditDialog } from "./dialogs/edit-dialog";
 import { PermisoDeleteDialog } from "./dialogs/delete-dialog";
 import { useAuthContext } from "@/components/providers/AuthProvider";
 import { toast } from "react-toastify";
+import { PermisosPDF } from "@/app/features/generar-reportes/components/templates/permisos-pdf";
+import { FileDown, ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
+
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string) {
+  const date = new Date().toISOString().split("T")[0];
+  return `permisos-${date}.${ext}`;
+}
+
+function buildSheetData(permisos: Permiso[]) {
+  return permisos.map((p) => ({
+    "Fecha Permiso": p.fechaPermiso ?? "-",
+    "Fecha Solicitud": p.fechaSolicitud ?? "-",
+    Motivo: p.motivo ?? "-",
+    "Goce Salario": p.conGoceSalario ? "Sí" : "No",
+    Estado: p.estadoSolicitud ?? "-",
+    "Fecha Aprobación": p.fechaAprobacion ?? "-",
+  }));
+}
+
+function exportToExcel(permisos: Permiso[]) {
+  const data = buildSheetData(permisos);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Permisos");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(permisos: Permiso[]) {
+  const data = buildSheetData(permisos);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function PermisosTable() {
   const {
@@ -245,11 +300,68 @@ export function PermisosTable() {
 
   return (
     <>
-      <TableHeader
-        title="Permisos"
-        entity="Solicitud"
-        onAddClick={() => setOpenCreate(true)}
-      />
+      <div className="flex justify-between gap-4">
+        <div className="flex-1 ">
+          <TableHeader
+            title="Permisos"
+            entity="Solicitud"
+            onAddClick={() => setOpenCreate(true)}
+          />
+        </div>
+        {/* Dropdown Exportar */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <FileDown className="h-4 w-4" />
+              Exportar
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+              Selecciona un formato
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            {/* PDF */}
+            <PDFDownloadLink
+              document={<PermisosPDF permisos={permisos} isAdmin={true} />}
+              fileName={getFileName("pdf")}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              {({ loading }) => (
+                <DropdownMenuItem
+                  disabled={loading}
+                  onSelect={(e) => e.preventDefault()}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <FileText className="h-4 w-4 text-red-500" />
+                  <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                </DropdownMenuItem>
+              )}
+            </PDFDownloadLink>
+
+            {/* Excel */}
+            <DropdownMenuItem
+              onSelect={() => exportToExcel(permisos)}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-green-600" />
+              <span>Exportar Excel</span>
+            </DropdownMenuItem>
+
+            {/* CSV */}
+            <DropdownMenuItem
+              onSelect={() => exportToCSV(permisos)}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <FileDown className="h-4 w-4 text-blue-500" />
+              <span>Exportar CSV</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <DataTable columns={tableColumns} data={permisos} />
 

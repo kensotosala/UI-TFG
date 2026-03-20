@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
 import * as XLSX from "xlsx";
+
+import { useState } from "react";
 import { FileText, FileSpreadsheet, FileDown, ChevronDown } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,19 +23,20 @@ import { DataTable } from "./data-table";
 import { NominaEmpleadoDetailsDialog } from "./dialogs/empleado-details-dialog";
 import { NominaPDF } from "@/app/features/generar-reportes/components/templates/nomina-pdf";
 
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-  { ssr: false, loading: () => null },
-);
-
 interface NominaEmpleadoTableProps {
   empleadoId: number;
 }
 
+// Feature para generar reportes
 function getFileName(ext: string) {
   const date = new Date().toISOString().split("T")[0];
   return `nominas-${date}.${ext}`;
 }
+
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
 
 function buildSheetData(nominas: NominaDTO[]) {
   return nominas.map((n) => ({

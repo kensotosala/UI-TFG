@@ -24,11 +24,6 @@ import { IncapacidadDetailsDialog } from "./dialogs/details-dialog";
 import { IncapacidadDeleteDialogEmpleado } from "./dialogs/IncapacidadDeleteDialogEmpleado";
 import { IncapacidadesPDF } from "@/app/features/generar-reportes/components/templates/incapacidades-pdf";
 
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
-  { ssr: false, loading: () => null },
-);
-
 // ── Helpers ──────────────────────────────────────────
 
 function calcularDias(fechaInicio: string, fechaFin: string): number {
@@ -39,6 +34,12 @@ function calcularDias(fechaInicio: string, fechaFin: string): number {
     return 0;
   }
 }
+
+// Feature para exportar reportes
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
 
 function getFileName(ext: string): string {
   const date = new Date().toISOString().split("T")[0];

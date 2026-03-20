@@ -1,5 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -17,6 +20,68 @@ import { VacacionCreateDialog } from "./dialogs/create-dialog";
 import { VacacionDetailsDialog } from "./dialogs/details-dialog";
 import { VacacionEditDialog } from "./dialogs/edit-dialog";
 import { VacacionDeleteDialog } from "./dialogs/delete-dialog";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { VacacionesPDF } from "@/app/features/generar-reportes/components/templates/vacaciones-pdf";
+import { FileDown, ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
+
+// Feature para Exportar en PDF, Excel o CSV
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function calcularDias(fechaInicio: string, fechaFin: string): number {
+  try {
+    const diff = new Date(fechaFin).getTime() - new Date(fechaInicio).getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+  } catch {
+    return 0;
+  }
+}
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `vacaciones-${date}.${ext}`;
+}
+
+function buildSheetData(incapacidades: ListarVacacionesDTO[]) {
+  return incapacidades.map((obj) => ({
+    "Fecha Inicio": obj.fechaInicio,
+    "Fecha Fin": obj.fechaFin,
+    Días: calcularDias(obj.fechaInicio, obj.fechaFin),
+    Estado: obj.estadoSolicitud,
+    "Fecha Solicitud": obj.fechaSolicitud,
+  }));
+}
+
+function exportToExcel(incapacidades: ListarVacacionesDTO[]): void {
+  const data = buildSheetData(incapacidades);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "vacaciones");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(incapacidades: ListarVacacionesDTO[]): void {
+  const data = buildSheetData(incapacidades);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function VacacionesTable() {
   const { vacaciones, isLoading, refetch, crear, actualizar, cancelar } =
@@ -133,11 +198,64 @@ export function VacacionesTable() {
 
   return (
     <>
-      <TableHeader
-        title="Vacaciones"
-        entity="Solicitud"
-        onAddClick={() => setOpenCreate(true)}
-      />
+      <div className="flex justify-between gap-3">
+        <div className="flex-1">
+          <TableHeader
+            title="Vacaciones"
+            entity="Solicitud"
+            onAddClick={() => setOpenCreate(true)}
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <FileDown className="h-4 w-4" />
+              Exportar
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+              Selecciona un formato
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <PDFDownloadLink
+              document={<VacacionesPDF vacaciones={vacaciones} />}
+              fileName={getFileName("pdf")}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              {({ loading }) => (
+                <DropdownMenuItem
+                  disabled={loading}
+                  onSelect={(e) => e.preventDefault()}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <FileText className="h-4 w-4 text-red-500" />
+                  <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                </DropdownMenuItem>
+              )}
+            </PDFDownloadLink>
+
+            <DropdownMenuItem
+              onSelect={() => exportToExcel(vacaciones)}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <FileSpreadsheet className="h-4 w-4 text-green-600" />
+              <span>Exportar Excel</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onSelect={() => exportToCSV(vacaciones)}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <FileDown className="h-4 w-4 text-blue-500" />
+              <span>Exportar CSV</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <DataTable columns={tableColumns} data={vacaciones} />
 

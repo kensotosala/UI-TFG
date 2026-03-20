@@ -1,8 +1,10 @@
 import { AxiosInstance } from "axios";
 import {
   ActualizarIncapacidadDTO,
+  EstadoIncapacidad,
   Incapacidad,
   RegistrarIncapacidadDTO,
+  TipoIncapacidad,
 } from "../types";
 import ApiClient from "@/lib/api/client";
 
@@ -27,14 +29,23 @@ class IncapacidadService {
   }
 
   private procesarIncapacidad(incapacidad: Incapacidad): Incapacidad {
-    if (!incapacidad.archivoAdjunto) return incapacidad;
-    if (incapacidad.archivoAdjunto.startsWith("http")) return incapacidad;
+    const base = {
+      ...incapacidad,
+      tipoIncapacidad: incapacidad.tipoIncapacidad as TipoIncapacidad,
+      estado: incapacidad.estado as EstadoIncapacidad,
+    };
 
-    const rutaArchivo = incapacidad.archivoAdjunto.startsWith("/")
-      ? incapacidad.archivoAdjunto
-      : `/${incapacidad.archivoAdjunto}`;
+    if (!base.archivoAdjunto) return base;
+    if (base.archivoAdjunto.startsWith("http")) return base;
 
-    return { ...incapacidad, archivoAdjunto: `${this.baseURL}${rutaArchivo}` };
+    const rutaArchivo = base.archivoAdjunto.startsWith("/")
+      ? base.archivoAdjunto
+      : `/${base.archivoAdjunto}`;
+
+    return {
+      ...base,
+      archivoAdjunto: `${this.baseURL}${rutaArchivo}`,
+    };
   }
 
   private procesarIncapacidades(incapacidades: Incapacidad[]): Incapacidad[] {

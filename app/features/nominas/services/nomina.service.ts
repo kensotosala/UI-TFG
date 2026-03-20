@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/features/nomina/services/nomina.service.ts
 
 import {
   DetalleNominaDTO,

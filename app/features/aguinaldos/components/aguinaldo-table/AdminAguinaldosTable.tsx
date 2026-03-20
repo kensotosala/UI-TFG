@@ -1,11 +1,21 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { Calculator, Gift, DollarSign, Users, Clock } from "lucide-react";
+import {
+  Calculator,
+  Gift,
+  ChevronDown,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 import { useAguinaldo } from "../../hooks/useAguinaldo";
 import { AguinaldoDTO } from "../../types";
 import { DataTable } from "./data-table";
@@ -15,6 +25,57 @@ import { AguinaldoPagarDialog } from "./dialogs/pagar-dialog";
 import { AguinaldoAnularDialog } from "./dialogs/anular-dialog";
 import { PagarTodosAguinaldosButton } from "./PagarTodosButton";
 import { columns } from "./columns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AguinaldosPDF } from "@/app/features/generar-reportes/components/templates/aguinaldo-pdf";
+
+// Feature para exportar en varios formatos (PDF, xlsx, csv)
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `aguinaldos-${date}.${ext}`;
+}
+
+function buildSheetData(aguinaldos: AguinaldoDTO[]) {
+  return aguinaldos.map((obj) => ({
+    Empleado: obj.nombreEmpleado,
+    Días: obj.diasTrabajados,
+    "Sal.Promedio": obj.salarioPromedio,
+    Monto: obj.montoAguinaldo,
+    Fecha: obj.fechaPago,
+  }));
+}
+
+function exportToExcel(aguinaldos: AguinaldoDTO[]): void {
+  const data = buildSheetData(aguinaldos);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "aguinaldos");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(aguinaldos: AguinaldoDTO[]): void {
+  const data = buildSheetData(aguinaldos);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 interface AguinaldoTableProps {
   anio?: number;
@@ -24,14 +85,8 @@ export function AguinaldoTable({ anio }: AguinaldoTableProps) {
   const currentYear = new Date().getFullYear();
   const year = anio || currentYear;
 
-  const {
-    aguinaldos,
-    resumen,
-    isLoading,
-    pagarAguinaldo,
-    anularAguinaldo,
-    refetch,
-  } = useAguinaldo(year);
+  const { aguinaldos, isLoading, pagarAguinaldo, anularAguinaldo, refetch } =
+    useAguinaldo();
 
   const [openCalc, setOpenCalc] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
@@ -84,94 +139,13 @@ export function AguinaldoTable({ anio }: AguinaldoTableProps) {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      {resumen && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-blue-200 bg-linear-to-br from-blue-50 to-blue-100">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-blue-900">
-                  Total Empleados
-                </CardTitle>
-                <Users className="h-5 w-5 text-blue-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-900">
-                {resumen.totalEmpleados}
-              </div>
-              <p className="text-xs text-blue-700 mt-1">Aguinaldos generados</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-yellow-200 bg-linear-to-br from-yellow-50 to-yellow-100">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-yellow-900">
-                  Pendientes
-                </CardTitle>
-                <Clock className="h-5 w-5 text-yellow-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-900">
-                {resumen.aguinaldosPendientes}
-              </div>
-              <p className="text-xs text-yellow-700 mt-1">Por pagar</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 bg-linear-to-br from-orange-50 to-orange-100">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-orange-900">
-                  Total Pendiente
-                </CardTitle>
-                <DollarSign className="h-5 w-5 text-orange-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">
-                ₡
-                {resumen.totalPendiente.toLocaleString("es-CR", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <p className="text-xs text-orange-700 mt-1">Monto a pagar</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-green-200 bg-linear-to-br from-green-50 to-green-100">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-green-900">
-                  Total Pagado
-                </CardTitle>
-                <Gift className="h-5 w-5 text-green-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-900">
-                ₡
-                {resumen.totalPagado.toLocaleString("es-CR", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <p className="text-xs text-green-700 mt-1">
-                {resumen.aguinaldosPagados} pagados
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Tabla Principal */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Aguinaldos {year}
+                Aguinaldos
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {aguinaldos.length} aguinaldo
@@ -181,6 +155,58 @@ export function AguinaldoTable({ anio }: AguinaldoTableProps) {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <FileDown className="h-4 w-4" />
+                    Exportar
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Selecciona un formato
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  {/* PDF */}
+                  <PDFDownloadLink
+                    document={<AguinaldosPDF aguinaldos={aguinaldos} />}
+                    fileName={getFileName("pdf")}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    {({ loading }) => (
+                      <DropdownMenuItem
+                        disabled={loading}
+                        onSelect={(e) => e.preventDefault()}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4 text-red-500" />
+                        <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                      </DropdownMenuItem>
+                    )}
+                  </PDFDownloadLink>
+
+                  {/* Excel */}
+                  <DropdownMenuItem
+                    onSelect={() => exportToExcel(aguinaldos)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                    <span>Exportar Excel</span>
+                  </DropdownMenuItem>
+
+                  {/* CSV */}
+                  <DropdownMenuItem
+                    onSelect={() => exportToCSV(aguinaldos)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileDown className="h-4 w-4 text-blue-500" />
+                    <span>Exportar CSV</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 onClick={() => setOpenCalc(true)}
                 variant="outline"

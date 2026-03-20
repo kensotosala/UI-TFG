@@ -187,7 +187,7 @@ export const VacacionesPDF = ({ vacaciones, empleado }: VacacionesPDFProps) => {
               wrap={false}
             >
               <Text style={[styles.tableCell, styles.colEmpleado]}>
-                {empleado ?? "-"}
+                {empleado ?? v.empleadoId}
               </Text>
               <Text style={[styles.tableCell, styles.colFecha]}>
                 {formatDate(v.fechaInicio)}

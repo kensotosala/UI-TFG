@@ -69,6 +69,7 @@ export const TIPOS_INCAPACIDAD = {
 export const ESTADOS_INCAPACIDAD = {
   ACTIVA: "ACTIVA",
   FINALIZADA: "FINALIZADA",
+  CANCELADA: "CANCELADA",
 } as const;
 
 export type TipoIncapacidad =
