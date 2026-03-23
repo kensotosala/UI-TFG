@@ -16,13 +16,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIncapacidadesEmpleado } from "../../hooks/useIncapacidadesEmpleado";
-import { Incapacidad } from "../../types";
 import { columns } from "./columns-empleado-incapacidades";
 import { IncapacidadCreateDialogEmpleado } from "./dialogs/IncapacidadCreateDialogEmpleado";
 import { DataTable } from "./data-table-incapacidades";
 import { IncapacidadDetailsDialog } from "./dialogs/details-dialog";
 import { IncapacidadDeleteDialogEmpleado } from "./dialogs/IncapacidadDeleteDialogEmpleado";
 import { IncapacidadesPDF } from "@/app/features/generar-reportes/components/templates/incapacidades-pdf";
+import { Incapacidad } from "@/app/features/incapacidades/types";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -98,7 +98,7 @@ export function IncapacidadesEmpleadoTable() {
     fechaInicio: string;
     fechaFin: string;
     tipoIncapacidad: string;
-    archivo?: File;
+    archivoAdjunto: File;
   }) => {
     try {
       await registrar(data);
@@ -187,7 +187,9 @@ export function IncapacidadesEmpleadoTable() {
               <DropdownMenuSeparator />
 
               <PDFDownloadLink
-                document={<IncapacidadesPDF incapacidades={incapacidades} />}
+                document={
+                  <IncapacidadesPDF incapacidades={incapacidades ?? []} />
+                }
                 fileName={getFileName("pdf")}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
@@ -235,7 +237,7 @@ export function IncapacidadesEmpleadoTable() {
 
       <IncapacidadDetailsDialog
         open={openView}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean | ((prevState: boolean) => boolean)) => {
           setOpenView(open);
           if (!open) setSelectedIncapacidad(null);
         }}

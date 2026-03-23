@@ -30,8 +30,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { TIPOS_INCAPACIDAD } from "../../../types";
+import { TIPOS_INCAPACIDAD } from "@/app/features/incapacidades/types";
 
+const MAX_FILE_SIZE_MB = 5;
+const ALLOWED_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
+// ✅ Props alineadas con handleCreate de la tabla
 interface IncapacidadCreateDialogEmpleadoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,7 +44,7 @@ interface IncapacidadCreateDialogEmpleadoProps {
     fechaInicio: string;
     fechaFin: string;
     tipoIncapacidad: string;
-    archivo?: File;
+    archivoAdjunto: File; // ✅ requerido, mismo nombre que RegistrarIncapacidadDTO
   }) => Promise<void>;
 }
 
@@ -50,14 +54,15 @@ const incapacidadSchema = z
       .string()
       .min(10, "El diagnóstico debe tener al menos 10 caracteres")
       .max(500, "El diagnóstico no debe exceder 500 caracteres"),
+
     fechaInicio: z
       .string()
       .min(1, "La fecha de inicio es obligatoria")
       .refine((fecha) => {
-        // Comparar solo la parte de fecha, sin conversión UTC
         const hoy = new Date().toISOString().split("T")[0];
         return fecha >= hoy;
       }, "La fecha no puede ser en el pasado"),
+
     fechaFin: z
       .string()
       .min(1, "La fecha de finalización es obligatoria")
@@ -65,16 +70,27 @@ const incapacidadSchema = z
         const hoy = new Date().toISOString().split("T")[0];
         return fecha >= hoy;
       }, "La fecha no puede ser en el pasado"),
+
     tipoIncapacidad: z
       .string()
       .min(1, "Debes seleccionar un tipo de incapacidad"),
-    archivoAdjunto: z.any().optional(),
+
+    // ✅ Requerido con validaciones reales de tipo y tamaño
+    archivoAdjunto: z
+      .instanceof(File, { message: "Debes adjuntar la boleta de incapacidad" })
+      .refine(
+        (file) => file.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
+        `El archivo no debe superar ${MAX_FILE_SIZE_MB}MB`,
+      )
+      .refine(
+        (file) => ALLOWED_MIME_TYPES.includes(file.type),
+        "Solo se permiten archivos PDF, JPG o PNG",
+      ),
   })
   .refine(
     (data) => {
-      const inicio = new Date(data.fechaInicio);
-      const fin = new Date(data.fechaFin);
-      return fin >= inicio;
+      if (!data.fechaInicio || !data.fechaFin) return true;
+      return data.fechaFin >= data.fechaInicio;
     },
     {
       message:
@@ -99,7 +115,7 @@ export function IncapacidadCreateDialogEmpleado({
       fechaFin: "",
       diagnostico: "",
       tipoIncapacidad: "",
-      archivoAdjunto: undefined,
+      // archivoAdjunto no tiene defaultValue — Zod lo exigirá al submit
     },
   });
 
@@ -111,12 +127,13 @@ export function IncapacidadCreateDialogEmpleado({
   const onSubmit = async (values: IncapacidadFormValues) => {
     setIsSubmitting(true);
     try {
+      // ✅ "archivoAdjunto" en lugar de "archivo" — coincide con el prop y el DTO
       await onCreate({
         diagnostico: values.diagnostico,
         fechaInicio: values.fechaInicio,
         fechaFin: values.fechaFin,
         tipoIncapacidad: values.tipoIncapacidad,
-        archivo: values.archivoAdjunto,
+        archivoAdjunto: values.archivoAdjunto, // File garantizado por Zod
       });
       handleClose();
     } catch (error) {
@@ -125,6 +142,8 @@ export function IncapacidadCreateDialogEmpleado({
       setIsSubmitting(false);
     }
   };
+
+  const hoyStr = new Date().toISOString().split("T")[0];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -198,7 +217,7 @@ export function IncapacidadCreateDialogEmpleado({
                   <FormItem>
                     <FormLabel>Fecha de Inicio*</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" min={hoyStr} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -212,7 +231,12 @@ export function IncapacidadCreateDialogEmpleado({
                   <FormItem>
                     <FormLabel>Fecha de Fin*</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      {/* min dinámico según fechaInicio seleccionada */}
+                      <Input
+                        type="date"
+                        min={form.watch("fechaInicio") || hoyStr}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -220,24 +244,26 @@ export function IncapacidadCreateDialogEmpleado({
               />
             </div>
 
+            {/* ✅ Boleta requerida */}
             <FormField
               control={form.control}
               name="archivoAdjunto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Boleta de Incapacidad</FormLabel>
+                  <FormLabel>Boleta de Incapacidad*</FormLabel>
                   <FormControl>
                     <Input
                       type="file"
-                      accept=".pdf,.jpg,.png"
+                      accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        field.onChange(file);
+                        field.onChange(file ?? undefined);
                       }}
                     />
                   </FormControl>
                   <FormDescription>
-                    Formatos permitidos: PDF, JPG, PNG
+                    Formatos permitidos: PDF, JPG, PNG · Máximo{" "}
+                    {MAX_FILE_SIZE_MB}MB
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

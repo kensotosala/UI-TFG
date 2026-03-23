@@ -1,14 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ActualizarIncapacidadDTO, RegistrarIncapacidadDTO } from "../types";
-import incapacidadService from "../services/incapacidad.services";
 import { toast } from "react-toastify";
+import incapacidadService from "../services/incapacidad.service";
 
 export const useIncapacidadMutations = () => {
   const queryClient = useQueryClient();
 
-  /**
-   * Mutación para registrar una nueva incapacidad
-   */
   const registrarIncapacidad = useMutation({
     mutationFn: (data: RegistrarIncapacidadDTO) =>
       incapacidadService.RegistrarIncapacidad(data),
@@ -27,10 +24,8 @@ export const useIncapacidadMutations = () => {
     },
   });
 
-  /**
-   * Mutación para actualizar una incapacidad
-   */
   const actualizarIncapacidad = useMutation({
+    // ✅ minúscula
     mutationFn: (dto: ActualizarIncapacidadDTO) =>
       incapacidadService.ActualizarIncapacidad(dto.incapacidadId, dto),
     onSuccess: () => {
@@ -48,10 +43,8 @@ export const useIncapacidadMutations = () => {
     },
   });
 
-  /**
-   * Eliminar Incapacidad
-   */
   const eliminarIncapacidad = useMutation({
+    // ✅ minúscula
     mutationFn: (id: number) => incapacidadService.EliminarIncapacidad(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });

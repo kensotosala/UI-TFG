@@ -1,4 +1,3 @@
-import React from "react";
 import { Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
 import {
   EstadoIncapacidad,
@@ -52,7 +51,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 
-  // ── Resumen ──────────────────────────────────────────
   summaryBox: {
     flexDirection: "row",
     gap: 8,
@@ -78,7 +76,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
 
-  // ── Tabla ────────────────────────────────────────────
   tableContainer: { marginTop: 4 },
   tableHeader: {
     flexDirection: "row",
@@ -261,7 +258,7 @@ export const IncapacidadesPDF = ({
             </Text>
           </View>
 
-          {incapacidades.map((inc, i) => (
+          {incapacidades?.map((inc, i) => (
             <View
               key={inc.idIncapacidad}
               style={[styles.tableRow, i % 2 === 0 ? styles.tableRowEven : {}]}

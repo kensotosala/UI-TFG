@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import z from "zod";
 import {
@@ -34,10 +35,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+
+function parseFechaLocal(fecha: string): Date {
+  const [year, month, day] = fecha.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getFechaHoyLocal(): Date {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return hoy;
+}
+
+const MAX_FILE_SIZE_MB = 5;
+const ALLOWED_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
 const incapacidadSchema = z
   .object({
     empleadoId: z.number().min(1, "Debes seleccionar un empleado"),
+
     diagnostico: z
       .string()
       .min(10, "El diagnóstico debe tener al menos 10 caracteres")
@@ -47,30 +64,38 @@ const incapacidadSchema = z
       .string()
       .min(1, "La fecha de inicio es obligatoria")
       .refine((fecha) => {
-        const incapacidad = new Date(fecha);
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        return incapacidad >= hoy;
-      }, "La fecha no puede ser en el pasado"),
+        return parseFechaLocal(fecha) >= getFechaHoyLocal();
+      }, "La fecha de inicio no puede ser en el pasado"),
+
     fechaFin: z
       .string()
       .min(1, "La fecha de finalización es obligatoria")
       .refine((fecha) => {
-        const incapacidad = new Date(fecha);
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        return incapacidad >= hoy;
-      }, "La fecha no puede ser en el pasado"),
+        return parseFechaLocal(fecha) >= getFechaHoyLocal();
+      }, "La fecha de fin no puede ser en el pasado"),
+
     tipoIncapacidad: z
       .string()
       .min(1, "Debes seleccionar un tipo de incapacidad"),
-    archivoAdjunto: z.string().optional(),
+
+    archivoAdjunto: z
+      .instanceof(File)
+      .optional()
+      .refine(
+        (file) => !file || file.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
+        `El archivo no debe superar ${MAX_FILE_SIZE_MB}MB`,
+      )
+      .refine(
+        (file) => !file || ALLOWED_MIME_TYPES.includes(file.type),
+        "Solo se permiten archivos PDF, JPG o PNG",
+      ),
   })
   .refine(
     (data) => {
-      const inicio = new Date(data.fechaInicio);
-      const fin = new Date(data.fechaFin);
-      return fin >= inicio;
+      if (!data.fechaInicio || !data.fechaFin) return true;
+      return (
+        parseFechaLocal(data.fechaFin) >= parseFechaLocal(data.fechaInicio)
+      );
     },
     {
       message:
@@ -88,6 +113,8 @@ export function IncapacidadCreateDialog({
 }: IncapacidadCreateDialogProps) {
   const { empleados = [] } = useEmpleados();
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const form = useForm<IncapacidadFormValues>({
     resolver: zodResolver(incapacidadSchema),
     defaultValues: {
@@ -96,34 +123,42 @@ export function IncapacidadCreateDialog({
       fechaFin: "",
       diagnostico: "",
       tipoIncapacidad: "",
-      archivoAdjunto: "",
+      archivoAdjunto: undefined,
     },
   });
 
   const handleClose = () => {
     form.reset();
+    setSubmitError(null);
     onOpenChange(false);
   };
 
   const onSubmit = async (values: IncapacidadFormValues) => {
     try {
+      if (!values.archivoAdjunto) {
+        setSubmitError("Debes adjuntar un archivo");
+        return;
+      }
       const payload: RegistrarIncapacidadDTO = {
-        archivoAdjunto: values.archivoAdjunto || null,
-        fechaInicio: values.fechaInicio,
-        fechaFin: values.fechaFin,
         empleadoId: values.empleadoId,
         diagnostico: values.diagnostico,
+        fechaInicio: values.fechaInicio,
+        fechaFin: values.fechaFin,
         tipoIncapacidad: values.tipoIncapacidad,
+        archivoAdjunto: values.archivoAdjunto,
       };
 
       await onCreate(payload);
       handleClose();
     } catch (error: any) {
       const mensaje =
-        error?.response?.message ?? error?.message ?? "Error desconocido";
-      alert(`No se pudo registrar la incapacidad: ${mensaje}`);
+        error?.response?.data?.message ?? error?.message ?? "Error desconocido";
+
+      setSubmitError(`No se pudo registrar: ${mensaje}`);
     }
   };
+
+  const hoyStr = new Date().toISOString().split("T")[0];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -135,6 +170,12 @@ export function IncapacidadCreateDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {submitError && (
+              <div className="rounded-md bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+                {submitError}
+              </div>
+            )}
+
             {/* Empleado */}
             <FormField
               control={form.control}
@@ -231,7 +272,7 @@ export function IncapacidadCreateDialog({
                 <FormItem>
                   <FormLabel>Fecha de Inicio*</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" min={hoyStr} {...field} />
                   </FormControl>
                   <FormDescription>No puede ser en el pasado</FormDescription>
                   <FormMessage />
@@ -247,7 +288,11 @@ export function IncapacidadCreateDialog({
                 <FormItem>
                   <FormLabel>Fecha de Fin*</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input
+                      type="date"
+                      min={form.watch("fechaInicio") || hoyStr}
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>
                     Debe ser posterior o igual a la fecha de inicio
@@ -263,16 +308,20 @@ export function IncapacidadCreateDialog({
               name="archivoAdjunto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL del archivo (opcional)</FormLabel>
+                  <FormLabel>Boleta de Incapacidad</FormLabel>
                   <FormControl>
                     <Input
-                      type="url"
-                      placeholder="https://ejemplo.com/incapacidad.pdf"
-                      {...field}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        field.onChange(file ?? undefined);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
-                    Ingresa la URL del archivo de incapacidad
+                    Formatos permitidos: PDF, JPG, PNG · Máximo{" "}
+                    {MAX_FILE_SIZE_MB}MB
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

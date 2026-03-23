@@ -8,7 +8,7 @@ import {
   ESTADOS_INCAPACIDAD,
   Incapacidad,
   TIPOS_INCAPACIDAD,
-} from "../../types";
+} from "@/app/features/incapacidades/types";
 
 const getTipoLabel = (tipo: string) => {
   const labels: Record<string, string> = {
