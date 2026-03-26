@@ -110,3 +110,32 @@ export interface DetalleCCSSEmpleadoDTO {
 }
 
 export type EstadoNomina = "PENDIENTE" | "PAGADA" | "ANULADA";
+
+export interface DetalleNominaParcialEmpleado {
+  empleadoId: number;
+  codigoEmpleado: string;
+  nombreCompleto: string;
+  departamento: string;
+  puesto: string;
+  salarioBaseQuincenal: number;
+  salarioProporcional: number;
+  totalHorasExtra: number;
+  bonificaciones: number;
+  totalBruto: number;
+  totalDeducciones: number;
+  totalNeto: number;
+  porcentajeCompletado: number;
+}
+
+export interface NominaParcialDTO {
+  quincena: number;
+  inicioQuincena: string;
+  fechaCalculo: string;
+  diasTranscurridos: number;
+  diasTotalesQuincena: number;
+  porcentajeCompletado: number;
+  empleados: DetalleNominaParcialEmpleado[];
+  totalBruto: number;
+  totalDeducciones: number;
+  totalNeto: number;
+}

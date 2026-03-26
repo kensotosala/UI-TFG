@@ -33,6 +33,7 @@ import {
 import { NominaPDF } from "@/app/features/generar-reportes/components/templates/nomina-pdf";
 import dynamic from "next/dynamic";
 import * as XLSX from "xlsx";
+import { NominaParcialDialog } from "./dialogs/nomina-parcial-dialog";
 
 function obtenerQuincenaPendiente(): {
   quincena: 1 | 2;
@@ -41,7 +42,7 @@ function obtenerQuincenaPendiente(): {
 } {
   const hoy = new Date();
   const dia = hoy.getDate();
-  const mes = hoy.getMonth() + 1; // 1-12
+  const mes = hoy.getMonth() + 1;
   const anio = hoy.getFullYear();
 
   if (dia >= 16) {
@@ -115,6 +116,7 @@ export function NominaAdminTable() {
   const [openDetails, setOpenDetails] = useState(false);
   const [openAnular, setOpenAnular] = useState(false);
   const [selectedNomina, setSelectedNomina] = useState<NominaDTO | null>(null);
+  const [openParcial, setOpenParcial] = useState(false);
 
   const verificarYGenerarQuincenaPendiente = useCallback(async () => {
     const { quincena, mes, anio } = obtenerQuincenaPendiente();
@@ -170,6 +172,25 @@ export function NominaAdminTable() {
       throw error;
     }
   };
+
+  const formatDateLocal = (date: Date) => {
+    return (
+      date.getFullYear() +
+      "-" +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(date.getDate()).padStart(2, "0")
+    );
+  };
+
+  const yaExisteParcialHoy = (nominas || []).some((n) => {
+    if (!n.fechaPago) return false;
+
+    const fechaNomina = formatDateLocal(new Date(n.fechaPago));
+    const hoy = formatDateLocal(new Date());
+
+    return fechaNomina === hoy;
+  });
 
   const handleVer = (nomina: NominaDTO) => {
     setSelectedNomina(nomina);
@@ -287,7 +308,7 @@ export function NominaAdminTable() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
-                    onClick={() => setOpenGenerate(true)}
+                    onClick={() => setOpenParcial(true)}
                     className="gap-2 bg-blue-600 hover:bg-blue-700"
                   >
                     <Calendar className="h-4 w-4" />
@@ -310,7 +331,7 @@ export function NominaAdminTable() {
                 manualmente.
               </p>
               <Button
-                onClick={() => setOpenGenerate(true)}
+                onClick={() => setOpenParcial(true)}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Calendar className="mr-2 h-4 w-4" />
@@ -341,6 +362,13 @@ export function NominaAdminTable() {
         nomina={selectedNomina}
         isDeleting={isDeleting}
         onConfirm={handleAnular}
+      />
+
+      <NominaParcialDialog
+        open={openParcial}
+        onOpenChange={setOpenParcial}
+        onSuccess={refetch}
+        yaExisteHoy={yaExisteParcialHoy}
       />
     </div>
   );

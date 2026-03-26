@@ -4,6 +4,7 @@ import {
   DetalleNominaDTO,
   GenerarNominaQuincenalDTO,
   NominaDTO,
+  NominaParcialDTO,
   PlanillaCCSSDTO,
   ResumenNominaQuincenalDTO,
 } from "../nomina.types";
@@ -102,6 +103,10 @@ class NominaService {
     return this.fetchWithAuth(
       `${API_BASE_URL}/Nomina/reportes/d151/mes/${mes}/anio/${anio}`,
     );
+  }
+
+  async calcularNominaParcialHoy(): Promise<NominaParcialDTO> {
+    return this.fetchWithAuth(`${API_BASE_URL}/Nomina/parcial/hoy`);
   }
 }
 

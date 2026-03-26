@@ -165,31 +165,27 @@ export function NominaDetailsDialog({
                 </span>
               </div>
 
-              {nomina.montoHorasExtra && nomina.montoHorasExtra > 0 && (
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-slate-700">
-                    Horas Extra ({nomina.horasExtras?.toFixed(1)} hrs)
-                  </span>
-                  <span className="font-mono font-semibold text-green-600">
-                    +₡
-                    {nomina.montoHorasExtra.toLocaleString("es-CR", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                </div>
-              )}
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-slate-700">
+                  Horas Extra ({nomina.horasExtras?.toFixed(1)} hrs)
+                </span>
+                <span className="font-mono font-semibold text-green-600">
+                  +₡
+                  {(nomina.montoHorasExtra || 0).toLocaleString("es-CR", {
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
 
-              {nomina.bonificaciones && nomina.bonificaciones > 0 && (
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="text-slate-700">Bonificaciones</span>
-                  <span className="font-mono font-semibold text-green-600">
-                    +₡
-                    {nomina.bonificaciones.toLocaleString("es-CR", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                </div>
-              )}
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-slate-700">Bonificaciones</span>
+                <span className="font-mono font-semibold text-green-600">
+                  +₡
+                  {(nomina.bonificaciones ?? 0).toLocaleString("es-CR", {
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
 
               <div className="flex justify-between items-center py-3 bg-green-100 px-3 rounded-lg mt-2">
                 <span className="font-bold text-green-800">Total Bruto</span>

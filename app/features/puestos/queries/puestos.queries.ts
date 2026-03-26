@@ -4,7 +4,7 @@ import { Puesto } from "../types";
 
 export const usePuestosQuery = () => {
   return useQuery<Puesto[]>({
-    queryKey: ["puestos"],
     queryFn: () => puestoService.getAll(),
+    queryKey: ["puestos"],
   });
 };

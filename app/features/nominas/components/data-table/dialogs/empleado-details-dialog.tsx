@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/nomina-empleado/dialogs/details-dialog-empleado.tsx
 "use client";
 
 import {
