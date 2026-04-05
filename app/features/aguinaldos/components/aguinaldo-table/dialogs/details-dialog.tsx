@@ -79,7 +79,10 @@ export function AguinaldoDetailsDialog({
                   <EstadoIcon className="h-8 w-8" />
                   <div>
                     <p className="font-semibold text-lg">
-                      Estado: {aguinaldo.estado?.toUpperCase()}
+                      Estado:{" "}
+                      {aguinaldo.estado?.toUpperCase() === "PAGADO"
+                        ? "CALCULADO"
+                        : aguinaldo.estado?.toUpperCase()}
                     </p>
                     {aguinaldo.fechaPago && (
                       <p className="text-sm">
@@ -189,7 +192,7 @@ export function AguinaldoDetailsDialog({
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  {/* <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">
                       Salario Promedio Mensual
                     </span>
@@ -205,7 +208,7 @@ export function AguinaldoDetailsDialog({
                     </span>
                   </div>
 
-                  <Separator />
+                  <Separator /> */}
 
                   <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
                     <div className="flex items-center justify-between">

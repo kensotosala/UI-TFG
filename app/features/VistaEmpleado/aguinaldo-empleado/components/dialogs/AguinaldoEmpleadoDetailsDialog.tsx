@@ -39,10 +39,10 @@ export function AguinaldoEmpleadoDetailsDialog({
             <span className="font-semibold">{aguinaldo.diasTrabajados}</span>
           </div>
 
-          <div className="flex justify-between">
+          {/* <div className="flex justify-between">
             <span>Salario promedio:</span>
             <span>₡{aguinaldo.salarioPromedio.toLocaleString("es-CR")}</span>
-          </div>
+          </div> */}
 
           <div className="flex justify-between text-lg font-bold text-green-700">
             <span>Monto aguinaldo:</span>

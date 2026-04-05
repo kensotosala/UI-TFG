@@ -13,18 +13,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, DollarSign, Ban } from "lucide-react";
+import { MoreHorizontal, Eye, Ban } from "lucide-react";
 import { AguinaldoDTO } from "../../types";
 
 const getEstadoBadge = (estado?: string) => {
-  const estadoUpper = estado?.toUpperCase() || "PENDIENTE";
+  let estadoUpper = estado?.toUpperCase() || "PENDIENTE";
+
+  if (estadoUpper === "PAGADO") {
+    estadoUpper = "CALCULADO";
+  }
 
   const variants: Record<string, { variant: any; className: string }> = {
     PENDIENTE: {
       variant: "secondary",
       className: "bg-yellow-100 text-yellow-800 border-yellow-300",
     },
-    PAGADO: {
+    CALCULADO: {
       variant: "default",
       className: "bg-green-100 text-green-800 border-green-300",
     },
@@ -75,12 +79,8 @@ export const columns = (
     ),
   },
   {
-    accessorKey: "fechaCalculo",
+    accessorKey: "anio",
     header: "Año",
-    cell: ({ row }) => {
-      const fecha = new Date(row.original.fechaCalculo);
-      return <div className="text-sm font-medium">{fecha.getFullYear()}</div>;
-    },
   },
   {
     accessorKey: "diasTrabajados",
@@ -91,15 +91,15 @@ export const columns = (
       </div>
     ),
   },
-  {
-    accessorKey: "salarioPromedio",
-    header: "Salario Promedio",
-    cell: ({ row }) => (
-      <div className="text-right font-mono text-sm">
-        ₡{row.original.salarioPromedio.toLocaleString("es-CR")}
-      </div>
-    ),
-  },
+  // {
+  //   accessorKey: "salarioPromedio",
+  //   header: "Salario Promedio",
+  //   cell: ({ row }) => (
+  //     <div className="text-right font-mono text-sm">
+  //       ₡{row.original.salarioPromedio.toLocaleString("es-CR")}
+  //     </div>
+  //   ),
+  // },
   {
     accessorKey: "montoAguinaldo",
     header: "Monto Aguinaldo",
@@ -109,18 +109,7 @@ export const columns = (
       </div>
     ),
   },
-  {
-    accessorKey: "fechaPago",
-    header: "Fecha Pago",
-    cell: ({ row }) => {
-      const fecha = row.original.fechaPago;
-      return (
-        <div className="text-sm">
-          {fecha ? new Date(fecha).toLocaleDateString("es-CR") : "-"}
-        </div>
-      );
-    },
-  },
+
   {
     accessorKey: "estado",
     header: "Estado",
@@ -132,8 +121,6 @@ export const columns = (
     cell: ({ row }) => {
       const aguinaldo = row.original;
       const isPendiente = aguinaldo.estado?.toUpperCase() === "PENDIENTE";
-      const isPagado = aguinaldo.estado?.toUpperCase() === "PAGADO";
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -154,10 +141,7 @@ export const columns = (
             {isPendiente && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onPagar(aguinaldo)}>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Pagar aguinaldo
-                </DropdownMenuItem>
+
                 <DropdownMenuItem
                   onClick={() => onAnular(aguinaldo)}
                   className="text-destructive focus:text-destructive"
@@ -168,11 +152,11 @@ export const columns = (
               </>
             )}
 
-            {isPagado && (
+            {/* {isPagado && (
               <DropdownMenuItem disabled className="text-muted-foreground">
                 Aguinaldo ya pagado
               </DropdownMenuItem>
-            )}
+            )} */}
           </DropdownMenuContent>
         </DropdownMenu>
       );

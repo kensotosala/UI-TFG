@@ -170,6 +170,31 @@ export function useAguinaldo(anio?: number) {
     }
   };
 
+  const calcularAguinaldoHastaHoy = async (): Promise<
+    ResultadoCalculoAguinaldoDTO[]
+  > => {
+    setIsCalculating(true);
+    try {
+      const resultados = await aguinaldoService.calcularAguinaldoHastaHoy();
+
+      toast.success(
+        `Se calcularon ${resultados.length} aguinaldos (hasta hoy)`,
+        {
+          description: "Revisa los resultados antes de registrar",
+        },
+      );
+
+      return resultados;
+    } catch (error: any) {
+      toast.error("Error al calcular aguinaldos hasta hoy", {
+        description: error.message,
+      });
+      throw error;
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
   const refetch = fetchAguinaldos;
 
   return {
@@ -185,6 +210,7 @@ export function useAguinaldo(anio?: number) {
     pagarAguinaldo,
     pagarAguinaldosMasivo,
     anularAguinaldo,
+    calcularAguinaldoHastaHoy,
     refetch,
   };
 }

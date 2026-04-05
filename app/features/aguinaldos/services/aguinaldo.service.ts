@@ -1,4 +1,3 @@
-// app/features/aguinaldo/services/aguinaldo.service.ts
 import {
   AguinaldoDTO,
   CalcularAguinaldoDTO,
@@ -79,6 +78,39 @@ class AguinaldoService {
       method: "POST",
       body: JSON.stringify(dto),
     });
+  }
+
+  async calcularAguinaldoHastaHoy(): Promise<ResultadoCalculoAguinaldoDTO[]> {
+    const response = await fetch(
+      `${API_BASE_URL}/Aguinaldo/calcular-hasta-hoy`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ mensaje: "Error desconocido" }));
+
+      throw new Error(
+        error.mensaje || `HTTP error! status: ${response.status}`,
+      );
+    }
+
+    const data = await response.json();
+
+    // { registrados: [...], errores: [] }
+    if (Array.isArray(data.registrados)) return data.registrados;
+
+    // Fallbacks por si el contrato cambia
+    if (Array.isArray(data.datos)) return data.datos;
+    if (Array.isArray(data)) return data;
+
+    throw new Error("La respuesta del servidor no contiene un array válido");
   }
 
   // ==================== REGISTRO ====================

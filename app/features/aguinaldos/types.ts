@@ -5,13 +5,13 @@ export interface AguinaldoDTO {
   nombreEmpleado?: string;
   departamento?: string;
   puesto?: string;
+  anio: number;
   fechaCalculo: string;
   diasTrabajados: number;
   salarioPromedio: number;
   montoAguinaldo: number;
   fechaPago?: string;
   estado?: string;
-  anio?: string;
   fechaCreacion?: string;
   fechaModificacion?: string;
 }
@@ -25,20 +25,9 @@ export interface CalcularAguinaldoDTO {
 export interface CalcularAguinaldoMasivoDTO {
   anio: number;
   fechaCorte?: string;
-  departamentoId?: number;
 }
 
-export interface ResultadoCalculoAguinaldoDTO {
-  empleadoId: number;
-  nombreEmpleado: string;
-  fechaContratacion: string;
-  fechaInicio: string;
-  fechaFin: string;
-  diasTrabajados: number;
-  salarioPromedio: number;
-  montoAguinaldo: number;
-  detalle: string;
-}
+export type ResultadoCalculoAguinaldoDTO = AguinaldoDTO;
 
 export interface ResumenAguinaldoDTO {
   totalEmpleados: number;
@@ -52,7 +41,7 @@ export interface ResumenAguinaldoDTO {
 
 export interface RegistrarAguinaldosRequest {
   anio: number;
-  calculos: ResultadoCalculoAguinaldoDTO[];
+  calculos: AguinaldoDTO[];
 }
 
 export interface PagarAguinaldosMasivoRequest {

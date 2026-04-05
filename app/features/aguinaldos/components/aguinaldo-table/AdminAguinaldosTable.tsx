@@ -23,7 +23,6 @@ import { CalcularAguinaldoDialog } from "./dialogs/calcular-dialog";
 import { AguinaldoDetailsDialog } from "./dialogs/details-dialog";
 import { AguinaldoPagarDialog } from "./dialogs/pagar-dialog";
 import { AguinaldoAnularDialog } from "./dialogs/anular-dialog";
-import { PagarTodosAguinaldosButton } from "./PagarTodosButton";
 import { columns } from "./columns";
 import {
   DropdownMenu,
@@ -215,11 +214,6 @@ export function AguinaldoTable({ anio }: AguinaldoTableProps) {
                 <Calculator className="h-4 w-4" />
                 Calcular Aguinaldos
               </Button>
-
-              <PagarTodosAguinaldosButton
-                aguinaldos={aguinaldos}
-                onSuccess={refetch}
-              />
             </div>
           </div>
         </CardHeader>
