@@ -437,7 +437,7 @@ export const asistenciaService = {
   marcar: async (empleadoId: number): Promise<MarcarResponse> => {
     try {
       const { data } = await axios.post<MarcarResponse>(
-        `${API_BASE_URL}/Asistencias/marcar`,
+        `${API_BASE_URL}/Asistencias/v2/marcar`,
         { empleadoId },
       );
       return data;

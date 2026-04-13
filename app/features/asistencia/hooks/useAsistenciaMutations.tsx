@@ -20,7 +20,6 @@ export const useAsistenciaMutations = () => {
       return asistenciaService.create(data);
     },
     onSuccess: (_, variables) => {
-      // Convertir empleadoId a string para las queries si es número
       const empleadoIdString =
         typeof variables.empleadoId === "number"
           ? variables.empleadoId.toString()
