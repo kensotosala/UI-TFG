@@ -177,12 +177,9 @@ export function useAguinaldo(anio?: number) {
     try {
       const resultados = await aguinaldoService.calcularAguinaldoHastaHoy();
 
-      toast.success(
-        `Se calcularon ${resultados.length} aguinaldos (hasta hoy)`,
-        {
-          description: "Revisa los resultados antes de registrar",
-        },
-      );
+      toast.success(`Se calcularon los aguinaldos (hasta hoy)`, {
+        description: "Revisa los resultados antes de registrar",
+      });
 
       return resultados;
     } catch (error: any) {

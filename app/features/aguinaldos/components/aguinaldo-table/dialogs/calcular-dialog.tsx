@@ -51,32 +51,27 @@ export function CalcularAguinaldoDialog({
   const today = new Date();
 
   const [selectedAnio, setSelectedAnio] = useState(anio.toString());
-  const [modoCalculo, setModoCalculo] = useState<ModoCalculo>("anual");
+  const [modoCalculo, setModoCalculo] = useState<ModoCalculo>("hasta-hoy");
   const [step, setStep] = useState<"config" | "resultados">("config");
 
   const [resultados, setResultados] = useState<AguinaldoDTO[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-  const { calcularAguinaldosMasivo, calcularAguinaldoHastaHoy, isCalculating } =
-    useAguinaldo(parseInt(selectedAnio));
+  const { calcularAguinaldosMasivo, isCalculating } = useAguinaldo(
+    parseInt(selectedAnio),
+  );
 
   const handleCalcular = async () => {
     try {
-      let calculos: AguinaldoDTO[];
+      const response = await calcularAguinaldosMasivo({
+        anio: parseInt(selectedAnio),
+      });
 
-      if (modoCalculo === "hasta-hoy") {
-        calculos = await calcularAguinaldoHastaHoy();
-      } else {
-        calculos = await calcularAguinaldosMasivo({
-          anio: parseInt(selectedAnio),
-        });
-      }
+      console.log(response);
 
-      setResultados(calculos);
-      setSelectedIds(calculos.map((c) => c.empleadoId));
-      setStep("resultados");
+      setResultados([]);
     } catch (error) {
-      console.error("Error al calcular:", error);
+      console.error(error);
     }
   };
 
@@ -158,15 +153,15 @@ export function CalcularAguinaldoDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={(currentYear - 1).toString()}>
+                    {/* <SelectItem value={(currentYear - 1).toString()}>
                       {currentYear - 1}
-                    </SelectItem>
+                    </SelectItem> */}
                     <SelectItem value={currentYear.toString()}>
                       {currentYear}
                     </SelectItem>
-                    <SelectItem value={(currentYear + 1).toString()}>
+                    {/* <SelectItem value={(currentYear + 1).toString()}>
                       {currentYear + 1}
-                    </SelectItem>
+                    </SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -176,6 +171,7 @@ export function CalcularAguinaldoDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
+                    disabled={today < new Date(`${selectedAnio}-11-30`)}
                     onClick={() => setModoCalculo("anual")}
                     className={`rounded-lg border-2 p-4 text-left transition-all ${
                       modoCalculo === "anual"

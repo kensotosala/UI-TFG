@@ -74,7 +74,7 @@ class AguinaldoService {
   async calcularAguinaldoMasivo(
     dto: CalcularAguinaldoMasivoDTO,
   ): Promise<ResultadoCalculoAguinaldoDTO[]> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Aguinaldo/calcular-masivo`, {
+    return this.fetchWithAuth(`${API_BASE_URL}/Aguinaldo/calcular-masivo-v2`, {
       method: "POST",
       body: JSON.stringify(dto),
     });
