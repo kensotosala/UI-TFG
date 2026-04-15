@@ -12,8 +12,7 @@ import {
   RegistroAsistencia,
   ResumenAsistencia,
 } from "../types";
-
-const API_BASE_URL = "https://localhost:7121/api";
+import api from "@/lib/axios-config";
 
 interface EstadoAsistenciaResponse {
   tieneRegistro: boolean;
@@ -128,8 +127,8 @@ export const asistenciaService = {
       if (filtros?.page) params.append("page", filtros.page.toString());
       if (filtros?.limit) params.append("limit", filtros.limit.toString());
 
-      const { data } = await axios.get<AsistenciaBackend[]>(
-        `${API_BASE_URL}/Asistencias?${params.toString()}`,
+      const { data } = await api.get<AsistenciaBackend[]>(
+        `/Asistencias?${params.toString()}`,
       );
 
       const transformedData = data.map(transformBackendToFrontend);
@@ -142,16 +141,13 @@ export const asistenciaService = {
         totalPages: Math.ceil(transformedData.length / (filtros?.limit || 20)),
       };
     } catch (error) {
-      console.error("❌ Error in getAll:", error);
       return handleApiError(error);
     }
   },
 
   getById: async (id: string): Promise<AsistenciaDetallada> => {
     try {
-      const { data } = await axios.get<AsistenciaBackend>(
-        `${API_BASE_URL}/Asistencias/${id}`,
-      );
+      const { data } = await api.get<AsistenciaBackend>(`/Asistencias/${id}`);
       return transformBackendToFrontend(data);
     } catch (error) {
       return handleApiError(error);
@@ -171,8 +167,8 @@ export const asistenciaService = {
       if (fechaInicio) payload.fechaInicio = fechaInicio;
       if (fechaFin) payload.fechaFin = fechaFin;
 
-      const { data } = await axios.post<AsistenciaBackend[]>(
-        `${API_BASE_URL}/Asistencias/buscar`,
+      const { data } = await api.post<AsistenciaBackend[]>(
+        `/Asistencias/buscar`,
         payload,
       );
 
@@ -184,12 +180,6 @@ export const asistenciaService = {
 
   create: async (data: CrearAsistenciaDTO): Promise<Asistencia> => {
     try {
-      if (!data.empleadoId || !data.fechaRegistro || !data.estado) {
-        throw new Error(
-          "Faltan datos requeridos: empleadoId, fechaRegistro y estado son obligatorios",
-        );
-      }
-
       const payload: Record<string, unknown> = {
         empleadoId: Number(data.empleadoId),
         fechaRegistro: formatDateForBackend(data.fechaRegistro),
@@ -218,18 +208,10 @@ export const asistenciaService = {
         );
       }
 
-      console.log("📤 Payload enviado al backend (CREATE):", payload);
-
-      const response = await axios.post<Asistencia>(
-        `${API_BASE_URL}/Asistencias`,
-        payload,
-      );
-
-      console.log("✅ Respuesta del backend (CREATE):", response.data);
+      const response = await api.post<Asistencia>(`/Asistencias`, payload);
 
       return response.data;
     } catch (error) {
-      console.error("❌ Error al crear asistencia:", error);
       return handleApiError(error);
     }
   },
@@ -274,25 +256,17 @@ export const asistenciaService = {
         );
       }
 
-      console.log("📤 Payload enviado al backend (UPDATE):", payload);
-
-      const response = await axios.put<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}`,
-        payload,
-      );
-
-      console.log("✅ Respuesta del backend (UPDATE):", response.data);
+      const response = await api.put<Asistencia>(`/Asistencias/${id}`, payload);
 
       return response.data;
     } catch (error) {
-      console.error("❌ Error al actualizar asistencia:", error);
       return handleApiError(error);
     }
   },
 
   delete: async (id: string): Promise<void> => {
     try {
-      await axios.delete(`${API_BASE_URL}/Asistencias/${id}`);
+      await api.delete(`/Asistencias/${id}`);
     } catch (error) {
       return handleApiError(error);
     }
@@ -302,8 +276,8 @@ export const asistenciaService = {
     registro: RegistroAsistencia,
   ): Promise<AsistenciaDetallada> => {
     try {
-      const { data } = await axios.post<AsistenciaDetallada>(
-        `${API_BASE_URL}/Asistencias/registrar`,
+      const { data } = await api.post<AsistenciaDetallada>(
+        `/Asistencias/registrar`,
         registro,
       );
       return data;
@@ -318,8 +292,8 @@ export const asistenciaService = {
     observaciones?: string,
   ): Promise<Asistencia> => {
     try {
-      const { data } = await axios.patch<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}/estado`,
+      const { data } = await api.patch<Asistencia>(
+        `/Asistencias/${id}/estado`,
         { estado, observaciones },
       );
       return data;
@@ -337,8 +311,8 @@ export const asistenciaService = {
     },
   ): Promise<Asistencia> => {
     try {
-      const { data } = await axios.patch<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}/justificar`,
+      const { data } = await api.patch<Asistencia>(
+        `/Asistencias/${id}/justificar`,
         justificacion,
       );
       return data;
@@ -349,8 +323,8 @@ export const asistenciaService = {
 
   aprobarJustificacion: async (id: string): Promise<Asistencia> => {
     try {
-      const { data } = await axios.patch<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}/aprobar-justificacion`,
+      const { data } = await api.patch<Asistencia>(
+        `/Asistencias/${id}/aprobar-justificacion`,
       );
       return data;
     } catch (error) {
@@ -364,11 +338,9 @@ export const asistenciaService = {
     fechaFin: string,
   ): Promise<ResumenAsistencia> => {
     try {
-      const { data } = await axios.get<ResumenAsistencia>(
-        `${API_BASE_URL}/Asistencias/resumen/${empleadoId}`,
-        {
-          params: { fechaInicio, fechaFin },
-        },
+      const { data } = await api.get<ResumenAsistencia>(
+        `/Asistencias/resumen/${empleadoId}`,
+        { params: { fechaInicio, fechaFin } },
       );
       return data;
     } catch (error) {
@@ -385,8 +357,8 @@ export const asistenciaService = {
       const params: Record<string, string> = { fechaInicio, fechaFin };
       if (departamento) params.departamento = departamento;
 
-      const { data } = await axios.get<ResumenAsistencia[]>(
-        `${API_BASE_URL}/Asistencias/resumen`,
+      const { data } = await api.get<ResumenAsistencia[]>(
+        `/Asistencias/resumen`,
         { params },
       );
       return data;
@@ -406,11 +378,9 @@ export const asistenciaService = {
         params.append("fechaInicio", filtros.fechaInicio);
       if (filtros?.fechaFin) params.append("fechaFin", filtros.fechaFin);
 
-      const { data } = await axios.get(
-        `${API_BASE_URL}/Asistencias/exportar/${formato}?${params.toString()}`,
-        {
-          responseType: "blob",
-        },
+      const { data } = await api.get(
+        `/Asistencias/exportar/${formato}?${params.toString()}`,
+        { responseType: "blob" },
       );
       return data;
     } catch (error) {
@@ -422,8 +392,8 @@ export const asistenciaService = {
     empleadoId: string,
   ): Promise<AsistenciaDetallada | null> => {
     try {
-      const { data } = await axios.get<AsistenciaBackend>(
-        `${API_BASE_URL}/Asistencias/hoy/${empleadoId}`,
+      const { data } = await api.get<AsistenciaBackend>(
+        `/Asistencias/hoy/${empleadoId}`,
       );
       return transformBackendToFrontend(data);
     } catch (error) {
@@ -436,8 +406,8 @@ export const asistenciaService = {
 
   marcar: async (empleadoId: number): Promise<MarcarResponse> => {
     try {
-      const { data } = await axios.post<MarcarResponse>(
-        `${API_BASE_URL}/Asistencias/v2/marcar`,
+      const { data } = await api.post<MarcarResponse>(
+        `/Asistencias/v2/marcar`,
         { empleadoId },
       );
       return data;
@@ -448,8 +418,8 @@ export const asistenciaService = {
 
   getEstado: async (empleadoId: number): Promise<EstadoAsistenciaResponse> => {
     try {
-      const { data } = await axios.get<EstadoAsistenciaResponse>(
-        `${API_BASE_URL}/Asistencias/estado/${empleadoId}`,
+      const { data } = await api.get<EstadoAsistenciaResponse>(
+        `/Asistencias/estado/${empleadoId}`,
       );
       return data;
     } catch (error) {

@@ -1,483 +1,112 @@
-// services/asistenciaService.ts - CORREGIDO PARA UPDATE
-
-import axios, { AxiosError } from "axios";
 import {
-  ActualizarAsistenciaDTO,
-  Asistencia,
-  AsistenciaBackend,
-  AsistenciaDetallada,
-  AsistenciasResponse,
-  CrearAsistenciaDTO,
-  EmpleadoAsistencia,
-  EstadoAsistencia,
-  FiltrosAsistencia,
-  RegistroAsistencia,
-  ResumenAsistencia,
-} from "../types";
+  ActualizarHoraExtraDTO,
+  AprobarRechazarHoraExtraDTO,
+  CrearHoraExtraDTO,
+  FiltrosHorasExtras,
+  HoraExtra,
+  HoraExtraBackend,
+  ReporteHorasExtras,
+} from "../../horas-extra/types";
+import { HoraExtraHoyDTO } from "../../VistaEmpleado/asistencia-empleado/types";
+import api from "@/lib/axios-config";
 
-const API_BASE_URL = "https://localhost:7121/api";
+const BASE = "/HorasExtras";
 
-/**
- * Manejo centralizado de errores
- */
-const handleApiError = (error: unknown): never => {
-  if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ message?: string }>;
-    const message =
-      axiosError.response?.data?.message ||
-      axiosError.message ||
-      "Error al comunicarse con el servidor";
-    throw new Error(message);
-  }
-  throw new Error("Error inesperado");
-};
-
-// Formatea fecha al formato YYYY-MM-DD
-const formatDateForBackend = (date: Date | string): string => {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toISOString().split("T")[0];
-};
-
-// Formatea hora al formato HH:mm:ss
-const formatTimeForBackend = (date: Date | string): string => {
-  const d = typeof date === "string" ? new Date(date) : date;
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const seconds = String(d.getSeconds()).padStart(2, "0");
-  return `${hours}:${minutes}:${seconds}`;
-};
-
-// Combina fecha y hora en formato ISO
-const combinarFechaHora = (fecha: string, hora: string): string => {
-  return `${fecha}T${hora}`;
-};
-
-/**
- * Convertir TimeSpan "08:48:00" a minutos
- */
-const timeSpanToMinutes = (timeSpan: string | null): number => {
+const timeSpanToMinutes = (timeSpan: string): number => {
   if (!timeSpan) return 0;
   const parts = timeSpan.split(":");
-  const hours = parseInt(parts[0] || "0");
-  const minutes = parseInt(parts[1] || "0");
+  const hours = parseInt(parts[0] || "0", 10);
+  const minutes = parseInt(parts[1] || "0", 10);
   return hours * 60 + minutes;
 };
 
-/**
- * Extraer solo la fecha de un DateTime "2026-01-13T00:00:00"
- */
-const extractDate = (dateTime: string): string => {
-  return dateTime.split("T")[0]; // "2026-01-13"
-};
+const transformBackendToFrontend = (backend: HoraExtraBackend): HoraExtra => ({
+  idHoraExtra: backend.idHoraExtra,
+  empleadoId: backend.empleadoId,
+  codigoEmpleado: backend.codigoEmpleado,
+  nombreEmpleado: backend.nombreEmpleado,
+  fechaSolicitud: backend.fechaSolicitud,
+  fechaInicio: backend.fechaInicio,
+  fechaFin: backend.fechaFin,
+  horasTotales: timeSpanToMinutes(backend.horasTotales),
+  tipoHoraExtra: backend.tipoHoraExtra,
+  motivo: backend.motivo,
+  estadoSolicitud: backend.estadoSolicitud,
+  jefeApruebaId: backend.jefeApruebaId,
+  nombreJefe: backend.nombreJefe,
+  fechaAprobacion: backend.fechaAprobacion,
+  fechaCreacion: backend.fechaCreacion,
+});
 
-/**
- * Extraer solo la hora de un DateTime "2026-01-13T08:12:00"
- */
-const extractTime = (dateTime: string | null): string | null => {
-  if (!dateTime) return null;
-  const time = dateTime.split("T")[1];
-  return time ? time.substring(0, 8) : null; // "08:12:00"
-};
-
-/**
- * Transformar datos del backend a formato frontend
- */
-const transformBackendToFrontend = (
-  backend: AsistenciaBackend
-): AsistenciaDetallada => {
-  const empleado: EmpleadoAsistencia = {
-    id: backend.empleadoId.toString(),
-    nombre: backend.nombreEmpleado.split(" ")[0] || "",
-    apellido: backend.nombreEmpleado.split(" ").slice(1).join(" ") || "",
-    nombreCompleto: backend.nombreEmpleado,
-    email: "",
-    departamento: "",
-    cargo: "",
-  };
-
-  return {
-    id: backend.idAsistencia.toString(),
-    empleadoId: backend.empleadoId.toString(),
-    fecha: extractDate(backend.fechaRegistro),
-    horaEntrada: extractTime(backend.horaEntrada),
-    horaSalida: extractTime(backend.horaSalida),
-    estado: backend.estado,
-    horasTrabajadas: timeSpanToMinutes(backend.horasTrabajadas),
-    createdAt: backend.fechaRegistro,
-    updatedAt: backend.fechaRegistro,
-    empleado: empleado,
-  };
-};
-
-/**
- * Servicio para gestión de asistencias
- */
-export const asistenciaService = {
-  /**
-   * Listar todas las asistencias con filtros opcionales
-   */
-  getAll: async (filtros?: FiltrosAsistencia): Promise<AsistenciasResponse> => {
-    try {
-      const params = new URLSearchParams();
-
-      if (filtros?.empleadoId) params.append("empleadoId", filtros.empleadoId);
-      if (filtros?.fechaInicio)
-        params.append("fechaInicio", filtros.fechaInicio);
-      if (filtros?.fechaFin) params.append("fechaFin", filtros.fechaFin);
-      if (filtros?.estado && filtros.estado.length > 0) {
-        filtros.estado.forEach((estado) => params.append("estado", estado));
-      }
-      if (filtros?.departamento)
-        params.append("departamento", filtros.departamento);
-      if (filtros?.page) params.append("page", filtros.page.toString());
-      if (filtros?.limit) params.append("limit", filtros.limit.toString());
-
-      const { data } = await axios.get<AsistenciaBackend[]>(
-        `${API_BASE_URL}/Asistencias?${params.toString()}`
-      );
-
-      const transformedData = data.map(transformBackendToFrontend);
-
-      return {
-        data: transformedData,
-        total: transformedData.length,
-        page: filtros?.page || 1,
-        limit: filtros?.limit || 20,
-        totalPages: Math.ceil(transformedData.length / (filtros?.limit || 20)),
-      };
-    } catch (error) {
-      console.error("❌ Error in getAll:", error);
-      return handleApiError(error);
-    }
+export const horasExtraService = {
+  async getAll(): Promise<HoraExtra[]> {
+    const { data } = await api.get<HoraExtraBackend[]>(BASE);
+    return data.map(transformBackendToFrontend);
   },
 
-  /**
-   * Obtener asistencia por ID con datos del empleado
-   */
-  getById: async (id: string): Promise<AsistenciaDetallada> => {
-    try {
-      const { data } = await axios.get<AsistenciaBackend>(
-        `${API_BASE_URL}/Asistencias/${id}`
-      );
-      return transformBackendToFrontend(data);
-    } catch (error) {
-      return handleApiError(error);
-    }
+  async getById(id: number): Promise<HoraExtra> {
+    const { data } = await api.get<HoraExtraBackend>(`${BASE}/${id}`);
+    return transformBackendToFrontend(data);
   },
 
-  /**
-   * Obtener asistencias de un empleado específico
-   */
-  getByEmpleado: async (
-    empleadoId: string,
-    fechaInicio?: string,
-    fechaFin?: string
-  ): Promise<AsistenciaDetallada[]> => {
-    try {
-      const params = new URLSearchParams({ empleadoId });
-      if (fechaInicio) params.append("fechaInicio", fechaInicio);
-      if (fechaFin) params.append("fechaFin", fechaFin);
-
-      const { data } = await axios.get<AsistenciaBackend[]>(
-        `${API_BASE_URL}/Asistencias/empleado/${empleadoId}?${params.toString()}`
-      );
-      return data.map(transformBackendToFrontend);
-    } catch (error) {
-      return handleApiError(error);
-    }
+  async buscarPorFiltros(filtros: FiltrosHorasExtras): Promise<HoraExtra[]> {
+    const { data } = await api.post<HoraExtraBackend[]>(
+      `${BASE}/buscar`,
+      filtros,
+    );
+    return data.map(transformBackendToFrontend);
   },
 
-  /**
-   * Crear nueva asistencia
-   */
-  create: async (data: CrearAsistenciaDTO): Promise<Asistencia> => {
-    try {
-      if (!data.empleadoId || !data.fechaRegistro || !data.estado) {
-        throw new Error(
-          "Faltan datos requeridos: empleadoId, fechaRegistro y estado son obligatorios"
-        );
-      }
-
-      const payload: Record<string, unknown> = {
-        empleadoId: Number(data.empleadoId),
-        fechaRegistro: formatDateForBackend(data.fechaRegistro),
-        estado: data.estado,
-      };
-
-      if (data.horaEntrada) {
-        const horaFormateada = data.horaEntrada.includes("T")
-          ? formatTimeForBackend(data.horaEntrada)
-          : data.horaEntrada;
-
-        payload.horaEntrada = combinarFechaHora(
-          formatDateForBackend(data.fechaRegistro),
-          horaFormateada
-        );
-      }
-
-      if (data.horaSalida) {
-        const horaFormateada = data.horaSalida.includes("T")
-          ? formatTimeForBackend(data.horaSalida)
-          : data.horaSalida;
-
-        payload.horaSalida = combinarFechaHora(
-          formatDateForBackend(data.fechaRegistro),
-          horaFormateada
-        );
-      }
-
-      console.log("📤 Payload enviado al backend (CREATE):", payload);
-
-      const response = await axios.post<Asistencia>(
-        `${API_BASE_URL}/Asistencias`,
-        payload
-      );
-
-      console.log("✅ Respuesta del backend (CREATE):", response.data);
-
-      return response.data;
-    } catch (error) {
-      console.error("❌ Error al crear asistencia:", error);
-      return handleApiError(error);
-    }
+  async getByEmpleado(empleadoId: number): Promise<HoraExtra[]> {
+    const { data } = await api.get<HoraExtraBackend[]>(
+      `${BASE}/empleado/${empleadoId}`,
+    );
+    return data.map(transformBackendToFrontend);
   },
 
-  /**
-   * Actualizar asistencia existente
-   * ✅ CORREGIDO: Ahora envía TODOS los campos requeridos por el backend
-   */
-  update: async (
-    id: string,
-    data: ActualizarAsistenciaDTO
-  ): Promise<Asistencia> => {
-    try {
-      // ✅ CRÍTICO: Obtener la asistencia actual para todos los campos base
-      const asistenciaActual = await asistenciaService.getById(id);
-      const fechaBase = asistenciaActual.fecha; // "2026-01-13"
-
-      // ✅ CRÍTICO: El backend requiere TODOS estos campos
-      const payload: Record<string, unknown> = {
-        empleadoId: Number(asistenciaActual.empleadoId), // ✅ Requerido
-        fechaRegistro: fechaBase, // ✅ Requerido
-        estado: data.estado || asistenciaActual.estado, // ✅ Requerido
-      };
-
-      // ✅ Formatear horaEntrada correctamente
-      if (data.horaEntrada && data.horaEntrada.trim() !== "") {
-        const horaFormateada = data.horaEntrada.includes("T")
-          ? formatTimeForBackend(data.horaEntrada)
-          : data.horaEntrada;
-
-        payload.horaEntrada = combinarFechaHora(fechaBase, horaFormateada);
-      } else if (asistenciaActual.horaEntrada) {
-        // ✅ Si no se proporciona nueva hora, mantener la actual
-        payload.horaEntrada = combinarFechaHora(
-          fechaBase,
-          asistenciaActual.horaEntrada
-        );
-      }
-
-      // ✅ Formatear horaSalida correctamente
-      if (data.horaSalida && data.horaSalida.trim() !== "") {
-        const horaFormateada = data.horaSalida.includes("T")
-          ? formatTimeForBackend(data.horaSalida)
-          : data.horaSalida;
-
-        payload.horaSalida = combinarFechaHora(fechaBase, horaFormateada);
-      } else if (asistenciaActual.horaSalida) {
-        // ✅ Si no se proporciona nueva hora, mantener la actual
-        payload.horaSalida = combinarFechaHora(
-          fechaBase,
-          asistenciaActual.horaSalida
-        );
-      }
-
-      console.log("📤 Payload enviado al backend (UPDATE):", payload);
-
-      const response = await axios.put<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}`,
-        payload
-      );
-
-      console.log("✅ Respuesta del backend (UPDATE):", response.data);
-
-      return response.data;
-    } catch (error) {
-      console.error("❌ Error al actualizar asistencia:", error);
-      return handleApiError(error);
-    }
+  async getPendientesByJefe(jefeId: number): Promise<HoraExtra[]> {
+    const { data } = await api.get<HoraExtraBackend[]>(
+      `${BASE}/pendientes/jefe/${jefeId}`,
+    );
+    return data.map(transformBackendToFrontend);
   },
 
-  /**
-   * Eliminar asistencia
-   */
-  delete: async (id: string): Promise<void> => {
-    try {
-      await axios.delete(`${API_BASE_URL}/Asistencias/${id}`);
-    } catch (error) {
-      return handleApiError(error);
-    }
+  async create(dto: CrearHoraExtraDTO): Promise<HoraExtra> {
+    const { data } = await api.post<HoraExtraBackend>(BASE, dto);
+    return transformBackendToFrontend(data);
   },
 
-  /**
-   * Registrar entrada o salida rápida
-   */
-  registrar: async (
-    registro: RegistroAsistencia
-  ): Promise<AsistenciaDetallada> => {
-    try {
-      const { data } = await axios.post<AsistenciaDetallada>(
-        `${API_BASE_URL}/Asistencias/registrar`,
-        registro
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
+  async update(id: number, dto: ActualizarHoraExtraDTO): Promise<void> {
+    await api.put(`${BASE}/${id}`, dto);
   },
 
-  /**
-   * Cambiar estado de asistencia
-   */
-  cambiarEstado: async (
-    id: string,
-    estado: EstadoAsistencia,
-    observaciones?: string
-  ): Promise<Asistencia> => {
-    try {
-      const { data } = await axios.patch<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}/estado`,
-        { estado, observaciones }
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
+  async delete(id: number): Promise<void> {
+    await api.delete(`${BASE}/${id}`);
   },
 
-  /**
-   * Justificar ausencia o tardanza
-   */
-  justificar: async (
-    id: string,
-    justificacion: {
-      tipo: string;
-      descripcion: string;
-      documentoUrl?: string;
-    }
-  ): Promise<Asistencia> => {
-    try {
-      const { data } = await axios.patch<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}/justificar`,
-        justificacion
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
+  async aprobarRechazar(
+    id: number,
+    dto: AprobarRechazarHoraExtraDTO,
+  ): Promise<void> {
+    await api.patch(`${BASE}/${id}/aprobar-rechazar`, dto);
   },
 
-  /**
-   * Aprobar justificación
-   */
-  aprobarJustificacion: async (id: string): Promise<Asistencia> => {
-    try {
-      const { data } = await axios.patch<Asistencia>(
-        `${API_BASE_URL}/Asistencias/${id}/aprobar-justificacion`
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
-
-  /**
-   * Obtener resumen de asistencias por empleado
-   */
-  getResumen: async (
-    empleadoId: string,
-    fechaInicio: string,
-    fechaFin: string
-  ): Promise<ResumenAsistencia> => {
-    try {
-      const { data } = await axios.get<ResumenAsistencia>(
-        `${API_BASE_URL}/Asistencias/resumen/${empleadoId}`,
-        {
-          params: { fechaInicio, fechaFin },
-        }
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
-
-  /**
-   * Obtener resumen general
-   */
-  getResumenGeneral: async (
+  async getReporte(
+    empleadoId: number,
     fechaInicio: string,
     fechaFin: string,
-    departamento?: string
-  ): Promise<ResumenAsistencia[]> => {
-    try {
-      const params: Record<string, string> = { fechaInicio, fechaFin };
-      if (departamento) params.departamento = departamento;
-
-      const { data } = await axios.get<ResumenAsistencia[]>(
-        `${API_BASE_URL}/Asistencias/resumen`,
-        { params }
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
+  ): Promise<ReporteHorasExtras> {
+    const { data } = await api.get<ReporteHorasExtras>(
+      `${BASE}/reporte/${empleadoId}`,
+      { params: { fechaInicio, fechaFin } },
+    );
+    return data;
   },
 
-  /**
-   * Exportar asistencias
-   */
-  exportar: async (
-    formato: "excel" | "pdf",
-    filtros?: FiltrosAsistencia
-  ): Promise<Blob> => {
-    try {
-      const params = new URLSearchParams();
-      if (filtros?.empleadoId) params.append("empleadoId", filtros.empleadoId);
-      if (filtros?.fechaInicio)
-        params.append("fechaInicio", filtros.fechaInicio);
-      if (filtros?.fechaFin) params.append("fechaFin", filtros.fechaFin);
-
-      const { data } = await axios.get(
-        `${API_BASE_URL}/Asistencias/exportar/${formato}?${params.toString()}`,
-        {
-          responseType: "blob",
-        }
-      );
-      return data;
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
-
-  /**
-   * Obtener asistencia del día actual
-   */
-  getAsistenciaHoy: async (
-    empleadoId: string
-  ): Promise<AsistenciaDetallada | null> => {
-    try {
-      const { data } = await axios.get<AsistenciaBackend>(
-        `${API_BASE_URL}/Asistencias/hoy/${empleadoId}`
-      );
-      return transformBackendToFrontend(data);
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        return null;
-      }
-      return handleApiError(error);
-    }
+  async getHoraExtraActiva(empleadoId: number): Promise<HoraExtraHoyDTO> {
+    const { data } = await api.get<HoraExtraHoyDTO>(
+      `${BASE}/activa/${empleadoId}`,
+    );
+    return data;
   },
 };
-
-export default asistenciaService;
