@@ -194,7 +194,12 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href={isAdmin ? "/admin" : "/empleado"}>
-                <Image src="/next.svg" alt="logo" width={20} height={20} />
+                <Image
+                  src="/asn_logo.svg"
+                  width={30}
+                  height={60}
+                  alt="ASN Logo"
+                />
                 <span>All Sport Nutrition</span>
               </Link>
             </SidebarMenuButton>
