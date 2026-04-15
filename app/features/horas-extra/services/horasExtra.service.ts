@@ -10,7 +10,7 @@ import {
 } from "../types";
 import { HoraExtraHoyDTO } from "../../VistaEmpleado/asistencia-empleado/types";
 
-const API_BASE_URL = "https://localhost:7121/api/HorasExtras";
+import api from "@/lib/axios-config";
 
 /**
  * Convertir TimeSpan "08:48:00" a minutos
@@ -52,7 +52,7 @@ export const horasExtraService = {
    * Obtener todas las horas extra
    */
   async getAll(): Promise<HoraExtra[]> {
-    const { data } = await axios.get<HoraExtraBackend[]>(API_BASE_URL);
+    const { data } = await api.get<HoraExtraBackend[]>("/HorasExtras");
     return data.map(transformBackendToFrontend);
   },
 
@@ -60,7 +60,7 @@ export const horasExtraService = {
    * Obtener hora extra por ID
    */
   async getById(id: number): Promise<HoraExtra> {
-    const { data } = await axios.get<HoraExtraBackend>(`${API_BASE_URL}/${id}`);
+    const { data } = await api.get<HoraExtraBackend>(`/HorasExtras/${id}`);
     return transformBackendToFrontend(data);
   },
 
@@ -69,7 +69,7 @@ export const horasExtraService = {
    */
   async buscarPorFiltros(filtros: FiltrosHorasExtras): Promise<HoraExtra[]> {
     const { data } = await axios.post<HoraExtraBackend[]>(
-      `${API_BASE_URL}/buscar`,
+      `/HorasExtras/buscar`,
       filtros,
     );
     return data.map(transformBackendToFrontend);
@@ -79,8 +79,8 @@ export const horasExtraService = {
    * Obtener horas extra por empleado
    */
   async getByEmpleado(empleadoId: number): Promise<HoraExtra[]> {
-    const { data } = await axios.get<HoraExtraBackend[]>(
-      `${API_BASE_URL}/empleado/${empleadoId}`,
+    const { data } = await api.get<HoraExtraBackend[]>(
+      `/HorasExtras/empleado/${empleadoId}`,
     );
     return data.map(transformBackendToFrontend);
   },
@@ -89,8 +89,8 @@ export const horasExtraService = {
    * Obtener solicitudes pendientes de un jefe
    */
   async getPendientesByJefe(jefeId: number): Promise<HoraExtra[]> {
-    const { data } = await axios.get<HoraExtraBackend[]>(
-      `${API_BASE_URL}/pendientes/jefe/${jefeId}`,
+    const { data } = await api.get<HoraExtraBackend[]>(
+      `/HorasExtras/pendientes/jefe/${jefeId}`,
     );
     return data.map(transformBackendToFrontend);
   },
@@ -99,7 +99,7 @@ export const horasExtraService = {
    * Crear nueva solicitud de hora extra
    */
   async create(dto: CrearHoraExtraDTO): Promise<HoraExtra> {
-    const { data } = await axios.post<HoraExtraBackend>(API_BASE_URL, dto);
+    const { data } = await api.post<HoraExtraBackend>("/HorasExtras", dto);
     return transformBackendToFrontend(data);
   },
 
@@ -107,14 +107,14 @@ export const horasExtraService = {
    * Actualizar solicitud de hora extra
    */
   async update(id: number, dto: ActualizarHoraExtraDTO): Promise<void> {
-    await axios.put(`${API_BASE_URL}/${id}`, dto);
+    await axios.put(`/HorasExtras/${id}`, dto);
   },
 
   /**
    * Eliminar solicitud de hora extra
    */
   async delete(id: number): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/${id}`);
+    await axios.delete(`/HorasExtras/${id}`);
   },
 
   /**
@@ -124,7 +124,7 @@ export const horasExtraService = {
     id: number,
     dto: AprobarRechazarHoraExtraDTO,
   ): Promise<void> {
-    await axios.patch(`${API_BASE_URL}/${id}/aprobar-rechazar`, dto);
+    await axios.patch(`/HorasExtras/${id}/aprobar-rechazar`, dto);
   },
 
   /**
@@ -135,8 +135,8 @@ export const horasExtraService = {
     fechaInicio: string,
     fechaFin: string,
   ): Promise<ReporteHorasExtras> {
-    const { data } = await axios.get<ReporteHorasExtras>(
-      `${API_BASE_URL}/reporte/${empleadoId}`,
+    const { data } = await api.get<ReporteHorasExtras>(
+      `/HorasExtras/reporte/${empleadoId}`,
       { params: { fechaInicio, fechaFin } },
     );
     return data;
@@ -146,8 +146,8 @@ export const horasExtraService = {
    * Valorar si existe una solicitud de hora extra válida para hoy
    */
   async getHoraExtraActiva(empleadoId: number): Promise<HoraExtraHoyDTO> {
-    const { data } = await axios.get<HoraExtraHoyDTO>(
-      `${API_BASE_URL}/activa/${empleadoId}`,
+    const { data } = await api.get<HoraExtraHoyDTO>(
+      `/HorasExtras/activa/${empleadoId}`,
     );
     return data;
   },
