@@ -1,22 +1,19 @@
 import axios from "axios";
 import { Departamento } from "../types";
+import api from "@/lib/axios-config";
 
-const API_BASE_URL = "https://localhost:7121/api";
+const BASE = "/Departamentos";
 
 export const departamentoService = {
   // Listar todos los departamentos
   getAll: async (): Promise<Departamento[]> => {
-    const { data } = await axios.get<Departamento[]>(
-      `${API_BASE_URL}/Departamentos`
-    );
+    const { data } = await api.get<Departamento[]>(BASE);
     return data;
   },
 
   // Obtener un departamento por ID
   getById: async (id: number): Promise<Departamento> => {
-    const { data } = await axios.get<Departamento>(
-      `${API_BASE_URL}/Departamentos/${id}`
-    );
+    const { data } = await api.get<Departamento>(BASE);
     return data;
   },
 
@@ -25,12 +22,9 @@ export const departamentoService = {
     departamento: Pick<
       Departamento,
       "nombreDepartamento" | "descripcion" | "idJefeDepartamento"
-    >
+    >,
   ): Promise<Departamento> => {
-    const { data } = await axios.post<Departamento>(
-      `${API_BASE_URL}/Departamentos`,
-      departamento
-    );
+    const { data } = await axios.post<Departamento>(BASE, departamento);
     return data;
   },
 
@@ -42,17 +36,14 @@ export const departamentoService = {
         Departamento,
         "nombreDepartamento" | "descripcion" | "idJefeDepartamento" | "estado"
       >
-    >
+    >,
   ): Promise<Departamento> => {
-    const { data } = await axios.put<Departamento>(
-      `${API_BASE_URL}/Departamentos/${id}`,
-      departamento
-    );
+    const { data } = await axios.put<Departamento>(BASE, departamento);
     return data;
   },
 
   // Eliminar departamento
   delete: async (id: number): Promise<void> => {
-    await axios.delete(`${API_BASE_URL}/Departamentos/${id}`);
+    await axios.delete(`${BASE}/${id}`);
   },
 };
