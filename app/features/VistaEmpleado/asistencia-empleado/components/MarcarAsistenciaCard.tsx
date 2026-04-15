@@ -107,7 +107,7 @@ export const MarcarAsistenciaCard = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Entrada:</span>
                   <span className="font-medium">
-                    {format(new Date(estado.horaEntrada), "HH:mm:ss", {
+                    {format(new Date(estado.horaEntrada), "hh:mm a", {
                       locale: es,
                     })}
                   </span>
@@ -117,7 +117,7 @@ export const MarcarAsistenciaCard = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Salida:</span>
                   <span className="font-medium">
-                    {format(new Date(estado.horaSalida), "HH:mm:ss", {
+                    {format(new Date(estado.horaSalida), "hh:mm a", {
                       locale: es,
                     })}
                   </span>
