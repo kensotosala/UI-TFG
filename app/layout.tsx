@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Sistema de RRHH",
   description: "Sistema integral de gestión de recursos humanos",
+  icons: {
+    icon: "/asn_logo2.svg",
+  },
 };
 
 export default function RootLayout({
