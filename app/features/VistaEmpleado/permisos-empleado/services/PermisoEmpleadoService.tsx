@@ -10,7 +10,7 @@ import { AxiosInstance } from "axios";
 
 class PermisoService {
   private readonly apiClient: AxiosInstance;
-  private readonly basePath = "/v1/Permisos";
+  private readonly basePath = "/Permisos";
 
   constructor() {
     this.apiClient = ApiClient.getInstance();

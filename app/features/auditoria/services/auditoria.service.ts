@@ -6,7 +6,7 @@ type AuditoriaResponse = {
   datos: AuditoriaCambios[];
 };
 
-const BASE_URL = "v1/Auditoria";
+const BASE_URL = "/Auditoria";
 
 const apiClient = ApiClient.getInstance();
 

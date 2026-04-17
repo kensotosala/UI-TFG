@@ -8,8 +8,8 @@ import {
 } from "../types";
 
 import { toast } from "react-toastify";
-import asistenciaService from "../services/asistencia.service";
 import { asistenciaKeys } from "../queries/asistencia.queries";
+import asistenciaService from "../../VistaEmpleado/asistencia-empleado/services/asistencia.empleado.service";
 
 export const useAsistenciaMutations = () => {
   const queryClient = useQueryClient();

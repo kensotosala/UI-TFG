@@ -6,7 +6,7 @@ import type {
   UpdateEvaluacionDto,
 } from "../types";
 
-const BASE_URL = "/v1/EvaluacionesRendimiento";
+const BASE_URL = "/EvaluacionesRendimiento";
 
 // Get the axios instance once
 const apiClient = ApiClient.getInstance();

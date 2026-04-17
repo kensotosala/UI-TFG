@@ -5,7 +5,7 @@ import {
   FiltrosAsistencia,
   ResumenAsistencia,
 } from "../types";
-import asistenciaService from "../services/asistencia.service";
+import asistenciaService from "../../VistaEmpleado/asistencia-empleado/services/asistencia.empleado.service";
 
 /**
  * Keys para el cache
@@ -23,7 +23,7 @@ export const asistenciaKeys = {
   resumenGeneral: (
     fechaInicio: string,
     fechaFin: string,
-    departamento?: string
+    departamento?: string,
   ) =>
     [
       "asistencias",
@@ -61,7 +61,7 @@ export const useAsistenciaQuery = (id: string) => {
 export const useAsistenciasByEmpleadoQuery = (
   empleadoId: string,
   fechaInicio?: string,
-  fechaFin?: string
+  fechaFin?: string,
 ) => {
   return useQuery<AsistenciaDetallada[]>({
     queryKey: asistenciaKeys.empleado(empleadoId),
@@ -88,7 +88,7 @@ export const useAsistenciaHoyQuery = (empleadoId: string) => {
 export const useResumenAsistenciaQuery = (
   empleadoId: string,
   fechaInicio: string,
-  fechaFin: string
+  fechaFin: string,
 ) => {
   return useQuery<ResumenAsistencia>({
     queryKey: asistenciaKeys.resumen(empleadoId, fechaInicio, fechaFin),
@@ -104,13 +104,13 @@ export const useResumenAsistenciaQuery = (
 export const useResumenGeneralQuery = (
   fechaInicio: string,
   fechaFin: string,
-  departamento?: string
+  departamento?: string,
 ) => {
   return useQuery<ResumenAsistencia[]>({
     queryKey: asistenciaKeys.resumenGeneral(
       fechaInicio,
       fechaFin,
-      departamento
+      departamento,
     ),
     queryFn: () =>
       asistenciaService.getResumenGeneral(fechaInicio, fechaFin, departamento),

@@ -10,103 +10,125 @@ import {
 } from "../nomina.types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://localhost:7121/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "https://localhost:7121/api";
 
 class NominaService {
-  private async fetchWithAuth(url: string, options: RequestInit = {}) {
-    const token = localStorage.getItem("token");
+  private async fetchWithAuth<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<T> {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
-    const headers = {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const response = await fetch(url, { ...options, headers });
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...options.headers,
+        },
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ mensaje: "Error desconocido" }));
-      throw new Error(error.mensaje || `Error HTTP: ${response.status}`);
+      // Manejo de errores HTTP
+      if (!response.ok) {
+        let errorMessage = `Error HTTP: ${response.status}`;
+
+        try {
+          const error = await response.json();
+          errorMessage = error.mensaje || error.message || errorMessage;
+        } catch {
+          // no body
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      // Manejo de respuestas sin contenido (204)
+      if (response.status === 204) {
+        return {} as T;
+      }
+
+      return (await response.json()) as T;
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        throw new Error("Timeout: El servidor tardó demasiado en responder.");
+      }
+
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return response.json();
   }
 
-  // Generar nómina quincenal
+  // =========================
+  // MÉTODOS
+  // =========================
+
   async generarNominaQuincenal(
     data: GenerarNominaQuincenalDTO,
   ): Promise<DetalleNominaDTO[]> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Nomina/generar`, {
+    return this.fetchWithAuth("/Nomina/generar", {
       method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  // Obtener nómina por ID
   async obtenerNominaPorId(id: number): Promise<NominaDTO> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Nomina/${id}`);
+    return this.fetchWithAuth(`/Nomina/${id}`);
   }
 
-  // Listar todas las nóminas
   async listarNominas(): Promise<NominaDTO[]> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Nomina`);
+    return this.fetchWithAuth("/Nomina");
   }
 
-  // Obtener nóminas de un empleado
   async obtenerNominasEmpleado(empleadoId: number): Promise<NominaDTO[]> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Nomina/empleado/${empleadoId}`);
+    return this.fetchWithAuth(`/Nomina/empleado/${empleadoId}`);
   }
 
-  // Obtener nóminas de una quincena
   async obtenerNominasQuincena(
     quincena: number,
     mes: number,
     anio: number,
   ): Promise<NominaDTO[]> {
     return this.fetchWithAuth(
-      `${API_BASE_URL}/Nomina/quincena/${quincena}/mes/${mes}/anio/${anio}`,
+      `/Nomina/quincena/${quincena}/mes/${mes}/anio/${anio}`,
     );
   }
 
-  // Anular nómina
   async anularNomina(id: number): Promise<{ mensaje: string }> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Nomina/${id}/anular`, {
+    return this.fetchWithAuth(`/Nomina/${id}/anular`, {
       method: "PUT",
     });
   }
 
-  // Obtener resumen de quincena
   async obtenerResumenQuincena(
     quincena: number,
     mes: number,
     anio: number,
   ): Promise<ResumenNominaQuincenalDTO> {
     return this.fetchWithAuth(
-      `${API_BASE_URL}/Nomina/resumen/quincena/${quincena}/mes/${mes}/anio/${anio}`,
+      `/Nomina/resumen/quincena/${quincena}/mes/${mes}/anio/${anio}`,
     );
   }
 
-  // Generar planilla CCSS
   async generarPlanillaCCSS(
     mes: number,
     anio: number,
   ): Promise<PlanillaCCSSDTO> {
-    return this.fetchWithAuth(
-      `${API_BASE_URL}/Nomina/reportes/ccss/mes/${mes}/anio/${anio}`,
-    );
+    return this.fetchWithAuth(`/Nomina/reportes/ccss/mes/${mes}/anio/${anio}`);
   }
 
-  // Generar declaración D-151
-  async generarDeclaracionD151(mes: number, anio: number): Promise<any> {
-    return this.fetchWithAuth(
-      `${API_BASE_URL}/Nomina/reportes/d151/mes/${mes}/anio/${anio}`,
-    );
+  async generarDeclaracionD151(mes: number, anio: number): Promise<unknown> {
+    return this.fetchWithAuth(`/Nomina/reportes/d151/mes/${mes}/anio/${anio}`);
   }
 
   async calcularNominaParcialHoy(): Promise<NominaParcialDTO> {
-    return this.fetchWithAuth(`${API_BASE_URL}/Nomina/parcial/hoy`);
+    return this.fetchWithAuth("/Nomina/parcial/hoy");
   }
 }
 

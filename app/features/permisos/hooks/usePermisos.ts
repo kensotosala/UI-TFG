@@ -1,7 +1,6 @@
 import {
   usePermisosQuery,
   usePermisoQuery,
-  usePermisosFiltrosQuery,
   usePermisosByEmpleadoQuery,
   usePermisosPendientesJefeQuery,
 } from "../queries/permisos.queries";
@@ -11,8 +10,8 @@ import {
   CrearPermisoDTO,
   ActualizarPermisoDTO,
   AprobarRechazarPermisoDTO,
-  FiltrosPermisos,
 } from "../types";
+
 import {
   useAprobarRechazarPermisoMutation,
   useCreatePermisoMutation,
@@ -21,8 +20,7 @@ import {
 } from "./permisos.mutations";
 
 /**
- * Hook principal para gestión de permisos
- * Combina queries y mutations en una sola interfaz
+ * Hook principal
  */
 export const usePermisos = () => {
   // Queries
@@ -40,34 +38,30 @@ export const usePermisos = () => {
   const deleteMutation = useDeletePermisoMutation();
   const aprobarRechazarMutation = useAprobarRechazarPermisoMutation();
 
-  // Funciones auxiliares
-  const createPermiso = async (dto: CrearPermisoDTO): Promise<Permiso> => {
-    return await createMutation.mutateAsync(dto);
-  };
+  // Actions
+  const createPermiso = (dto: CrearPermisoDTO): Promise<Permiso> =>
+    createMutation.mutateAsync(dto);
 
-  const updatePermiso = async ({
+  const updatePermiso = ({
     id,
-    data,
+    dto,
   }: {
     id: number;
-    data: ActualizarPermisoDTO;
-  }): Promise<Permiso> => {
-    return await updateMutation.mutateAsync({ id, dto: data });
-  };
+    dto: ActualizarPermisoDTO;
+  }): Promise<Permiso> => updateMutation.mutateAsync({ id, dto });
 
-  const deletePermiso = async (id: number): Promise<void> => {
-    return await deleteMutation.mutateAsync(id);
-  };
+  const deletePermiso = (id: number): Promise<void> =>
+    deleteMutation.mutateAsync(id);
 
-  const aprobarRechazarPermiso = async ({
+  const aprobarRechazarPermiso = ({
     id,
-    data,
+    dto,
   }: {
     id: number;
-    data: AprobarRechazarPermisoDTO;
-  }): Promise<void> => {
-    return await aprobarRechazarMutation.mutateAsync({ id, dto: data });
-  };
+    dto: AprobarRechazarPermisoDTO;
+  }): Promise<{ mensaje?: string }> =>
+    // ✅ FIX tipo
+    aprobarRechazarMutation.mutateAsync({ id, dto });
 
   return {
     // Data
@@ -83,7 +77,7 @@ export const usePermisos = () => {
     deletePermiso,
     aprobarRechazarPermiso,
 
-    // Mutation states
+    // States
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
@@ -92,7 +86,7 @@ export const usePermisos = () => {
 };
 
 /**
- * Hook para obtener un permiso específico por ID
+ * Obtener uno
  */
 export const usePermiso = (id: number) => {
   const { data: permiso, isLoading, isError, error } = usePermisoQuery(id);
@@ -106,28 +100,7 @@ export const usePermiso = (id: number) => {
 };
 
 /**
- * Hook para buscar permisos con filtros
- */
-export const usePermisosFiltros = (filtros: FiltrosPermisos) => {
-  const {
-    data: permisos = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = usePermisosFiltrosQuery(filtros);
-
-  return {
-    permisos,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  };
-};
-
-/**
- * Hook para obtener permisos de un empleado
+ * Por empleado
  */
 export const usePermisosByEmpleado = (empleadoId: number) => {
   const {
@@ -148,7 +121,7 @@ export const usePermisosByEmpleado = (empleadoId: number) => {
 };
 
 /**
- * Hook para obtener permisos pendientes de un jefe
+ * Pendientes por jefe
  */
 export const usePermisosPendientesJefe = (jefeId: number) => {
   const {

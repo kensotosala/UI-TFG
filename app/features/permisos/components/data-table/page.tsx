@@ -127,7 +127,10 @@ export function PermisosTable() {
 
   const handleEdit = async (id: number, data: ActualizarPermisoDTO) => {
     try {
-      await updatePermiso({ id, data });
+      await updatePermiso({
+        id,
+        dto: data,
+      });
       setOpenEdit(false);
       setSelectedPermiso(null);
       refetch();
@@ -173,7 +176,7 @@ export function PermisosTable() {
 
       await aprobarRechazarPermiso({
         id: selectedPermiso.idPermiso,
-        data: dto,
+        dto: dto,
       });
 
       toast.success("Permiso aprobado exitosamente");
@@ -211,14 +214,13 @@ export function PermisosTable() {
 
     try {
       const dto: AprobarRechazarPermisoDTO = {
-        estadoSolicitud: EstadoPermiso.RECHAZADA,
+        estadoSolicitud: EstadoPermiso.APROBADA,
         jefeApruebaId: user.employeeId!,
-        comentariosRechazo: comentariosRechazo.trim(),
       };
 
       await aprobarRechazarPermiso({
         id: selectedPermiso.idPermiso,
-        data: dto,
+        dto: dto,
       });
 
       toast.success("Permiso rechazado exitosamente");

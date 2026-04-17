@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios-config";
 import {
   HoraExtra,
   HoraExtraBackend,
@@ -10,17 +10,13 @@ import {
 } from "../types";
 import { HoraExtraHoyDTO } from "../../VistaEmpleado/asistencia-empleado/types";
 
-import api from "@/lib/axios-config";
-
 /**
  * Convertir TimeSpan "08:48:00" a minutos
  */
 const timeSpanToMinutes = (timeSpan: string): number => {
   if (!timeSpan) return 0;
-  const parts = timeSpan.split(":");
-  const hours = parseInt(parts[0] || "0", 10);
-  const minutes = parseInt(parts[1] || "0", 10);
-  return hours * 60 + minutes;
+  const [hours = "0", minutes = "0"] = timeSpan.split(":");
+  return parseInt(hours, 10) * 60 + parseInt(minutes, 10);
 };
 
 /**
@@ -57,7 +53,7 @@ export const horasExtraService = {
   },
 
   /**
-   * Obtener hora extra por ID
+   * Obtener por ID
    */
   async getById(id: number): Promise<HoraExtra> {
     const { data } = await api.get<HoraExtraBackend>(`/HorasExtras/${id}`);
@@ -65,10 +61,10 @@ export const horasExtraService = {
   },
 
   /**
-   * Buscar horas extra con filtros
+   * Buscar por filtros
    */
   async buscarPorFiltros(filtros: FiltrosHorasExtras): Promise<HoraExtra[]> {
-    const { data } = await axios.post<HoraExtraBackend[]>(
+    const { data } = await api.post<HoraExtraBackend[]>(
       `/HorasExtras/buscar`,
       filtros,
     );
@@ -76,7 +72,7 @@ export const horasExtraService = {
   },
 
   /**
-   * Obtener horas extra por empleado
+   * Obtener por empleado
    */
   async getByEmpleado(empleadoId: number): Promise<HoraExtra[]> {
     const { data } = await api.get<HoraExtraBackend[]>(
@@ -86,7 +82,7 @@ export const horasExtraService = {
   },
 
   /**
-   * Obtener solicitudes pendientes de un jefe
+   * Obtener pendientes por jefe
    */
   async getPendientesByJefe(jefeId: number): Promise<HoraExtra[]> {
     const { data } = await api.get<HoraExtraBackend[]>(
@@ -96,39 +92,39 @@ export const horasExtraService = {
   },
 
   /**
-   * Crear nueva solicitud de hora extra
+   * Crear solicitud
    */
   async create(dto: CrearHoraExtraDTO): Promise<HoraExtra> {
-    const { data } = await api.post<HoraExtraBackend>("/HorasExtras", dto);
+    const { data } = await api.post<HoraExtraBackend>(`/HorasExtras`, dto);
     return transformBackendToFrontend(data);
   },
 
   /**
-   * Actualizar solicitud de hora extra
+   * Actualizar solicitud
    */
   async update(id: number, dto: ActualizarHoraExtraDTO): Promise<void> {
-    await axios.put(`/HorasExtras/${id}`, dto);
+    await api.put(`/HorasExtras/${id}`, dto);
   },
 
   /**
-   * Eliminar solicitud de hora extra
+   * Eliminar solicitud
    */
   async delete(id: number): Promise<void> {
-    await axios.delete(`/HorasExtras/${id}`);
+    await api.delete(`/HorasExtras/${id}`);
   },
 
   /**
-   * Aprobar o rechazar solicitud
+   * Aprobar o rechazar
    */
   async aprobarRechazar(
     id: number,
     dto: AprobarRechazarHoraExtraDTO,
   ): Promise<void> {
-    await axios.patch(`/HorasExtras/${id}/aprobar-rechazar`, dto);
+    await api.patch(`/HorasExtras/${id}/aprobar-rechazar`, dto);
   },
 
   /**
-   * Obtener reporte de horas extra
+   * Obtener reporte
    */
   async getReporte(
     empleadoId: number,
@@ -137,13 +133,15 @@ export const horasExtraService = {
   ): Promise<ReporteHorasExtras> {
     const { data } = await api.get<ReporteHorasExtras>(
       `/HorasExtras/reporte/${empleadoId}`,
-      { params: { fechaInicio, fechaFin } },
+      {
+        params: { fechaInicio, fechaFin },
+      },
     );
     return data;
   },
 
   /**
-   * Valorar si existe una solicitud de hora extra válida para hoy
+   * Obtener hora extra activa hoy
    */
   async getHoraExtraActiva(empleadoId: number): Promise<HoraExtraHoyDTO> {
     const { data } = await api.get<HoraExtraHoyDTO>(

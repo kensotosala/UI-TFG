@@ -2,9 +2,9 @@
 export enum TipoHoraExtra {
   // NOTA: Estos valores NO se guardan en BD
   // La columna tipo_hora_extra en BD usa valores de estado
-  ORDINARIA = "ORDINARIA",
-  DOBLE = "DOBLE",
-  TRIPLE = "TRIPLE",
+  PENDIENTE = "PENDIENTE",
+  APROBADA = "APROBADA",
+  RECHAZADA = "RECHAZADA",
 }
 
 export enum EstadoSolicitud {

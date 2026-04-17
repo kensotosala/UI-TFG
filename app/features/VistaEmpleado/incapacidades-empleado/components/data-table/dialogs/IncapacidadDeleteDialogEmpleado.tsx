@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { Incapacidad, TIPOS_INCAPACIDAD } from "../../../types";
+import {
+  Incapacidad,
+  TIPOS_INCAPACIDAD,
+} from "@/app/features/incapacidades/types";
 
 interface IncapacidadDeleteDialogEmpleadoProps {
   open: boolean;
@@ -40,6 +43,8 @@ export function IncapacidadDeleteDialogEmpleado({
   if (!incapacidad) return null;
 
   const handleConfirm = async () => {
+    if (!incapacidad?.idIncapacidad) return;
+
     await onConfirm(incapacidad.idIncapacidad);
   };
 

@@ -19,7 +19,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Interceptor para manejar errores de autenticación
@@ -43,20 +43,20 @@ api.interceptors.response.use(
       }
 
       return Promise.reject(
-        new Error("Sesión expirada. Por favor, inicie sesión nuevamente.")
+        new Error("Sesión expirada. Por favor, inicie sesión nuevamente."),
       );
     }
 
     // Manejo de otros errores
     if (error.code === "ECONNABORTED") {
       throw new Error(
-        "Timeout: El servidor no responde. Por favor, intente nuevamente."
+        "Timeout: El servidor no responde. Por favor, intente nuevamente.",
       );
     }
 
     if (error.response?.status === 0) {
       throw new Error(
-        "Error de conexión: Verifica tu conexión a internet o que el servidor esté corriendo."
+        "Error de conexión: Verifica tu conexión a internet o que el servidor esté corriendo.",
       );
     }
 
@@ -69,7 +69,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

@@ -10,8 +10,8 @@ import {
   ActualizarPermisoDTO,
   AprobarRechazarPermisoDTO,
 } from "../types";
-import permisoService from "../services/permisos.service";
 import { permisoKeys } from "../queries/permisos.queries";
+import { permisoService } from "../services/permisos.service";
 
 /**
  * Crear nuevo permiso
@@ -24,9 +24,12 @@ export const useCreatePermisoMutation = (): UseMutationResult<
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (dto: CrearPermisoDTO) => permisoService.create(dto),
+    mutationFn: permisoService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: permisoKeys.lists() });
+    },
+    onError: (error) => {
+      console.error("Error creando permiso:", error.message);
     },
   });
 };
@@ -49,6 +52,9 @@ export const useUpdatePermisoMutation = (): UseMutationResult<
       });
       queryClient.invalidateQueries({ queryKey: permisoKeys.lists() });
     },
+    onError: (error) => {
+      console.error("Error actualizando permiso:", error.message);
+    },
   });
 };
 
@@ -63,10 +69,15 @@ export const useDeletePermisoMutation = (): UseMutationResult<
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => permisoService.delete(id),
+    mutationFn: permisoService.delete,
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: permisoKeys.detail(id) });
+      queryClient.invalidateQueries({
+        queryKey: permisoKeys.detail(id),
+      });
       queryClient.invalidateQueries({ queryKey: permisoKeys.lists() });
+    },
+    onError: (error) => {
+      console.error("Error eliminando permiso:", error.message);
     },
   });
 };
@@ -83,11 +94,16 @@ export const useAprobarRechazarPermisoMutation = (): UseMutationResult<
 
   return useMutation({
     mutationFn: ({ id, dto }) => permisoService.aprobarRechazar(id, dto),
+
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: permisoKeys.detail(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: permisoKeys.lists() });
+    },
+
+    onError: (error) => {
+      console.error("Error aprobando/rechazando permiso:", error.message);
     },
   });
 };

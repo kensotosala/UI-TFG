@@ -7,13 +7,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  IncapacidadDetailsDialogProps,
-  ESTADOS_INCAPACIDAD,
-  TIPOS_INCAPACIDAD,
-} from "../../../types";
+
 import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
 import { ExternalLink } from "lucide-react";
+import {
+  ESTADOS_INCAPACIDAD,
+  IncapacidadDetailsDialogProps,
+  TIPOS_INCAPACIDAD,
+} from "@/app/features/incapacidades/types";
 
 export function IncapacidadDetailsDialog({
   open,

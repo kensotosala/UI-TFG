@@ -2,29 +2,28 @@ import {
   MetricasRendimientoDTO,
   ResultDTO,
 } from "@/app/features/evaluaciones-rendimiento/types";
-import { useQuery } from "@tanstack/react-query";
 
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/axios-config";
+
+/**
+ * Fetch usando axios centralizado
+ */
 const fetchMetricas = async (): Promise<MetricasRendimientoDTO[]> => {
-  const response = await fetch(
-    "https://localhost:7121/api/v1/MetricasRendimiento",
-    {
-      headers: { accept: "*/*" },
-    },
+  const { data } = await api.get<ResultDTO<MetricasRendimientoDTO[]>>(
+    "/MetricasRendimiento",
   );
 
-  if (!response.ok) {
-    throw new Error(`Error HTTP: ${response.status}`);
+  if (!data.exitoso) {
+    throw new Error(data.mensaje || "Error al obtener métricas");
   }
 
-  const result: ResultDTO<MetricasRendimientoDTO[]> = await response.json();
-
-  if (!result.exitoso) {
-    throw new Error(result.mensaje || "Error al obtener métricas");
-  }
-
-  return result.datos;
+  return data.datos;
 };
 
+/**
+ * Hook
+ */
 export const useMetricasRendimiento = () => {
   return useQuery<MetricasRendimientoDTO[], Error>({
     queryKey: ["metricasRendimiento"],

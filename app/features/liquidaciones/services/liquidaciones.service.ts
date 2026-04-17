@@ -1,69 +1,50 @@
-import ApiClient from "@/lib/api/client";
+import api from "@/lib/axios-config";
+
 import {
   CrearLiquidacionDTO,
   EditarLiquidacionDTO,
   LiquidacionDTO,
   ResultDTO,
 } from "../types";
-import { AxiosInstance } from "axios";
 
 class LiquidacionesService {
-  private apiClient: AxiosInstance;
-  private readonly basePath = "/v1/Liquidaciones";
-
-  constructor() {
-    this.apiClient = ApiClient.getInstance();
-  }
+  private readonly basePath = "/Liquidaciones";
 
   // ========================================
-  // OPERACIONES CRUD BÁSICAS
+  // LISTAR
   // ========================================
 
-  /**
-   * Listar las liquidaciones
-   */
   async listar(): Promise<ResultDTO<LiquidacionDTO[]>> {
-    const { data } = await this.apiClient.get<ResultDTO<LiquidacionDTO[]>>(
-      this.basePath,
-    );
+    const { data } = await api.get<ResultDTO<LiquidacionDTO[]>>(this.basePath);
     return data;
   }
 
   async listarPorEmpleado(
     idEmpleado: number,
   ): Promise<ResultDTO<LiquidacionDTO[]>> {
-    const { data } = await this.apiClient.get<ResultDTO<LiquidacionDTO[]>>(
+    const { data } = await api.get<ResultDTO<LiquidacionDTO[]>>(
       `${this.basePath}/empleado/${idEmpleado}`,
     );
     return data;
   }
 
-  /**
-   * Crear una nueva liquidación
-   */
+  // ========================================
+  // CRUD
+  // ========================================
+
   async crear(
     payload: CrearLiquidacionDTO,
   ): Promise<ResultDTO<LiquidacionDTO>> {
-    const { data } = await this.apiClient.post<ResultDTO<LiquidacionDTO>>(
+    const { data } = await api.post<ResultDTO<LiquidacionDTO>>(
       this.basePath,
       payload,
     );
     return data;
   }
 
-  /**
-   * Obtener una liquidación por ID
-   */
   async obtenerPorId(id: number): Promise<ResultDTO<LiquidacionDTO>> {
-    const { data } = await this.apiClient.get<ResultDTO<LiquidacionDTO>>(
+    const { data } = await api.get<ResultDTO<LiquidacionDTO>>(
       `${this.basePath}/${id}`,
-    );
-    return data;
-  }
-
-  async anular(id: number): Promise<ResultDTO<boolean>> {
-    const { data } = await this.apiClient.patch<ResultDTO<boolean>>(
-      `${this.basePath}/${id}/anular`,
     );
     return data;
   }
@@ -71,12 +52,20 @@ class LiquidacionesService {
   async editar(
     payload: EditarLiquidacionDTO,
   ): Promise<ResultDTO<LiquidacionDTO>> {
-    const { data } = await this.apiClient.put<ResultDTO<LiquidacionDTO>>(
+    const { data } = await api.put<ResultDTO<LiquidacionDTO>>(
       `${this.basePath}/${payload.id}`,
       payload,
+    );
+    return data;
+  }
+
+  async anular(id: number): Promise<ResultDTO<boolean>> {
+    const { data } = await api.patch<ResultDTO<boolean>>(
+      `${this.basePath}/${id}/anular`,
     );
     return data;
   }
 }
 
 export const liquidacionesService = new LiquidacionesService();
+export default liquidacionesService;

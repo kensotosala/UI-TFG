@@ -8,7 +8,7 @@ import ApiClient from "@/lib/api/client";
 
 class IncapacidadService {
   private readonly apiClient: AxiosInstance;
-  private readonly basePath = "/v1/Incapacidad";
+  private readonly basePath = "/Incapacidad";
   private readonly baseURL: string;
 
   constructor() {
@@ -17,10 +17,9 @@ class IncapacidadService {
     const apiURL = ApiClient.getBaseURL();
     try {
       const parsed = new URL(apiURL);
-      parsed.pathname = parsed.pathname.replace(/\/api\/?$/, "");
-      this.baseURL = parsed.toString().replace(/\/$/, "");
+      this.baseURL = parsed.origin;
     } catch {
-      this.baseURL = apiURL.replace(/\/api\/?$/, "");
+      this.baseURL = apiURL;
     }
   }
 

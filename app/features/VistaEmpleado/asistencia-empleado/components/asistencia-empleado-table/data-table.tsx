@@ -120,7 +120,9 @@ export function AsistenciasEmpleadoTable() {
 
             {/* PDF */}
             <PDFDownloadLink
-              document={<AsistenciaPDF asistencias={asistencias} />}
+              document={
+                <AsistenciaPDF asistencias={asistencias} isAdmin={false} />
+              }
               fileName={getFileName("pdf")}
               style={{ textDecoration: "none", color: "inherit" }}
             >
