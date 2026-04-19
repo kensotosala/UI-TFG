@@ -66,7 +66,7 @@ export const columns = (
   onEditar: (horaExtra: HoraExtra) => void,
   onEliminar: (horaExtra: HoraExtra) => void,
   onAprobar?: (horaExtra: HoraExtra) => void,
-  onRechazar?: (horaExtra: HoraExtra) => void
+  onRechazar?: (horaExtra: HoraExtra) => void,
 ): ColumnDef<HoraExtra>[] => [
   {
     accessorKey: "idHoraExtra",
@@ -208,15 +208,19 @@ export const columns = (
                 </>
               )}
 
-              <DropdownMenuSeparator />
+              {horaExtra.estadoSolicitud !== EstadoSolicitud.APROBADA && (
+                <>
+                  <DropdownMenuSeparator />
 
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => onEliminar(horaExtra)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar
-              </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => onEliminar(horaExtra)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

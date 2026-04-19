@@ -9,7 +9,9 @@ export const useEmpleadoMutations = () => {
   const createEmpleado = useMutation({
     mutationFn: (data: EmpleadoCreateDTO) => empleadoService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["empleados"] });
+      queryClient.invalidateQueries({
+        queryKey: ["empleados"],
+      });
       toast.success("Empleado creado correctamente", {
         position: "top-right",
         autoClose: 3000,
@@ -28,7 +30,7 @@ export const useEmpleadoMutations = () => {
       empleadoService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["empleados"] });
-      toast.success("✅ Empleado actualizado correctamente", {
+      toast.success("Empleado actualizado correctamente", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -45,13 +47,12 @@ export const useEmpleadoMutations = () => {
     mutationFn: (id: number) => empleadoService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["empleados"] });
-      toast.success("✅ Empleado eliminado correctamente", {
+      toast.success("Empleado eliminado correctamente", {
         position: "top-right",
         autoClose: 3000,
       });
     },
     onError: (error: Error) => {
-      // Remover el emoji si ya viene en el mensaje
       const message = error.message.startsWith("❌")
         ? error.message
         : `${error.message}`;

@@ -38,3 +38,13 @@ export interface EmpleadoCreateDTO {
   password: string;
   rolId: number;
 }
+
+export interface UsuarioDTO {
+  idUsuario: number;
+  empleadoId: number;
+  nombreUsuario: string;
+  estado?: string | null;
+  ultimoAcceso?: Date | null;
+  fechaCreacion?: Date | null;
+  nombreEmpleado?: string | null;
+}

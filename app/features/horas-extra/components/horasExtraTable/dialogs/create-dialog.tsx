@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { CrearHoraExtraDTO, TipoHoraExtra } from "../../../types";
 import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
+import { useUsuariosAdmin } from "@/app/features/empleados/hooks/useUsuarios";
 
 interface HoraExtraCreateDialogProps {
   open: boolean;
@@ -35,7 +36,7 @@ const initialFormData: CrearHoraExtraDTO = {
   empleadoId: 0,
   fechaInicio: "",
   fechaFin: "",
-  tipoHoraExtra: TipoHoraExtra.ORDINARIA, // Se envía pero no se guarda en BD
+  tipoHoraExtra: TipoHoraExtra.PENDIENTE,
   motivo: "",
   jefeApruebaId: undefined,
 };
@@ -48,7 +49,14 @@ export function HoraExtraCreateDialog({
   const [formData, setFormData] = useState<CrearHoraExtraDTO>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { empleados } = useEmpleados();
+  const { empleadosSinHorasExtraEnProceso } = useEmpleados();
+  const { usuariosAdmin } = useUsuariosAdmin();
+
+  const getLocalDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -86,13 +94,67 @@ export function HoraExtraCreateDialog({
       newErrors.motivo = "El motivo es obligatorio";
     }
 
+    if (formData.fechaInicio && formData.fechaFin) {
+      const inicio = new Date(formData.fechaInicio);
+      const fin = new Date(formData.fechaFin);
+
+      const horaInicio = inicio.getHours();
+      const horaFin = fin.getHours();
+
+      const HORA_FIN_JORNADA = 17;
+      const MAX_HORAS_EXTRA = 4;
+      const HORA_MAXIMA_PERMITIDA = 21;
+
+      if (horaInicio < HORA_FIN_JORNADA) {
+        newErrors.fechaInicio =
+          "Las horas extra deben iniciar después de las 5:00 pm";
+      }
+
+      if (horaFin > HORA_MAXIMA_PERMITIDA) {
+        newErrors.fechaFin = "Las horas extra no pueden superar las 9:00 pm";
+      }
+
+      const diffMs = fin.getTime() - inicio.getTime();
+      const diffHoras = diffMs / (1000 * 60 * 60);
+
+      if (diffHoras > MAX_HORAS_EXTRA) {
+        newErrors.fechaFin =
+          "No se pueden solicitar más de 4 horas extra por día";
+      }
+
+      if (fin <= inicio) {
+        newErrors.fechaFin =
+          "La fecha de fin debe ser posterior a la de inicio";
+      }
+    }
+
+    const ahora = new Date();
+
+    if (formData.fechaInicio) {
+      const inicio = new Date(formData.fechaInicio);
+
+      if (inicio < ahora) {
+        newErrors.fechaInicio =
+          "No puedes seleccionar una fecha u hora en el pasado";
+      }
+    }
+
+    if (formData.fechaFin) {
+      const fin = new Date(formData.fechaFin);
+
+      if (fin < ahora) {
+        newErrors.fechaFin =
+          "No puedes seleccionar una fecha u hora en el pasado";
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = <K extends keyof CrearHoraExtraDTO>(
     field: K,
-    value: CrearHoraExtraDTO[K]
+    value: CrearHoraExtraDTO[K],
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -112,8 +174,6 @@ export function HoraExtraCreateDialog({
         fechaFin: formData.fechaFin,
         motivo: formData.motivo,
         jefeApruebaId: formData.jefeApruebaId,
-        // tipoHoraExtra se puede omitir ya que no se usa en BD
-        // pero lo incluimos para compatibilidad
         tipoHoraExtra: formData.tipoHoraExtra,
       };
 
@@ -158,12 +218,12 @@ export function HoraExtraCreateDialog({
                 <SelectValue placeholder="Selecciona un empleado" />
               </SelectTrigger>
               <SelectContent>
-                {empleados.map((e) => (
+                {empleadosSinHorasExtraEnProceso.map((e) => (
                   <SelectItem
                     key={e.idEmpleado}
                     value={e.idEmpleado.toString()}
                   >
-                    {e.nombre} {e.primerApellido}
+                    {e.nombre} {e.primerApellido} {e.segundoApellido || ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -180,6 +240,7 @@ export function HoraExtraCreateDialog({
               <Input
                 id="fechaInicio"
                 type="datetime-local"
+                min={getLocalDateTime()}
                 className={errors.fechaInicio ? "border-destructive" : ""}
                 value={formData.fechaInicio}
                 onChange={(e) => handleChange("fechaInicio", e.target.value)}
@@ -193,6 +254,7 @@ export function HoraExtraCreateDialog({
               <Input
                 id="fechaFin"
                 type="datetime-local"
+                min={getLocalDateTime()}
                 className={errors.fechaFin ? "border-destructive" : ""}
                 value={formData.fechaFin}
                 onChange={(e) => handleChange("fechaFin", e.target.value)}
@@ -203,7 +265,7 @@ export function HoraExtraCreateDialog({
             </div>
           </div>
 
-          {/* Tipo - Campo solo para referencia UI, no se guarda en BD */}
+          {/* Tipo
           <div className="space-y-2">
             <Label>Tipo de Hora Extra (Referencia)</Label>
             <Select
@@ -226,7 +288,7 @@ export function HoraExtraCreateDialog({
             <p className="text-xs text-muted-foreground">
               Este campo es solo informativo y no afecta el registro
             </p>
-          </div>
+          </div> */}
 
           {/* Motivo */}
           <div className="space-y-2">
@@ -243,9 +305,10 @@ export function HoraExtraCreateDialog({
             )}
           </div>
 
-          {/* Jefe (Opcional) */}
+          {/* Jefe (Opcional)
           <div className="space-y-2">
             <Label>Jefe que Aprueba (Opcional)</Label>
+
             <Select
               value={formData.jefeApruebaId?.toString() || ""}
               onValueChange={(val) =>
@@ -255,20 +318,21 @@ export function HoraExtraCreateDialog({
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un jefe" />
               </SelectTrigger>
+
               <SelectContent>
-                {empleados
-                  .filter((e) => e.idEmpleado !== formData.empleadoId)
-                  .map((e) => (
+                {usuariosAdmin
+                  .filter((u) => u.empleadoId !== formData.empleadoId)
+                  .map((u) => (
                     <SelectItem
-                      key={e.idEmpleado}
-                      value={e.idEmpleado.toString()}
+                      key={u.idUsuario}
+                      value={u.idUsuario.toString()}
                     >
-                      {e.nombre} {e.primerApellido}
+                      {u.nombreEmpleado}
                     </SelectItem>
                   ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button

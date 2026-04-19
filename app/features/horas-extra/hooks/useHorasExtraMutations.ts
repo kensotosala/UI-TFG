@@ -13,9 +13,12 @@ export const useHorasExtraMutations = () => {
 
   const createHoraExtra = useMutation({
     mutationFn: (data: CrearHoraExtraDTO) => horasExtraService.create(data),
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: horasExtraKeys.all });
-      toast.success("✅ Solicitud de horas extra creada correctamente", {
+      queryClient.invalidateQueries({
+        queryKey: ["empleados-sin-horas-extra-en-proceso"],
+      });
+      toast.success("Solicitud de horas extra creada correctamente", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -33,7 +36,7 @@ export const useHorasExtraMutations = () => {
       horasExtraService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: horasExtraKeys.all });
-      toast.success("✅ Solicitud actualizada correctamente", {
+      toast.success("Solicitud actualizada correctamente", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -49,8 +52,10 @@ export const useHorasExtraMutations = () => {
   const deleteHoraExtra = useMutation({
     mutationFn: (id: number) => horasExtraService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: horasExtraKeys.all });
-      toast.success("✅ Solicitud eliminada correctamente", {
+      queryClient.invalidateQueries({
+        queryKey: ["empleados-sin-horas-extra-en-proceso"],
+      });
+      toast.success("Solicitud eliminada correctamente", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -85,7 +90,7 @@ export const useHorasExtraMutations = () => {
         variables.data.estadoSolicitud === "APROBADA"
           ? "aprobada"
           : "rechazada";
-      toast.success(`✅ Solicitud ${accion} correctamente`, {
+      toast.success(`Solicitud ${accion} correctamente`, {
         position: "top-right",
         autoClose: 3000,
       });

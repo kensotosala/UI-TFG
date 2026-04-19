@@ -1,8 +1,6 @@
-import axios, { AxiosError } from "axios";
-import { Empleado, EmpleadoCreateDTO } from "../types";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5071/api";
+import { AxiosError } from "axios";
+import api from "@/lib/axios-config";
+import { Empleado, EmpleadoCreateDTO, UsuarioDTO } from "../types";
 
 interface ErrorResponse {
   error?: string;
@@ -13,76 +11,83 @@ interface ErrorResponse {
 export const empleadoService = {
   // Obtener todos los empleados
   getAll: async (): Promise<Empleado[]> => {
-    const response = await axios.get(`${API_BASE_URL}/Empleados`);
-    return response.data;
+    const { data } = await api.get("/Empleados");
+    return data;
   },
 
   // Obtener empleado por ID
   getById: async (id: number): Promise<Empleado> => {
-    const response = await axios.get(`${API_BASE_URL}/Empleados/${id}`);
-    return response.data;
+    const { data } = await api.get(`/Empleados/${id}`);
+    return data;
+  },
+
+  // Obtener usuarios admin
+  getUsuariosAdmin: async (): Promise<UsuarioDTO[]> => {
+    const { data } = await api.get("/Usuarios/listar-usuarios-admin");
+    return data.datos;
+  },
+
+  // Obtener empleados sin horas extra en proceso
+  getEmpleadosSinHorasExtraEnProceso: async (): Promise<Empleado[]> => {
+    const { data } = await api.get(
+      "/Empleados/empleados-sin-horas-extra-en-proceso",
+    );
+    return data;
   },
 
   // Crear empleado
-  create: async (data: EmpleadoCreateDTO): Promise<Empleado> => {
-    const response = await axios.post(`${API_BASE_URL}/Empleados`, data);
-    return response.data;
+  create: async (payload: EmpleadoCreateDTO): Promise<Empleado> => {
+    const { data } = await api.post("/Empleados", payload);
+    return data;
   },
 
   // Actualizar empleado
-  update: async (id: number, data: Partial<Empleado>): Promise<void> => {
-    await axios.put(`${API_BASE_URL}/Empleados/${id}`, data);
+  update: async (id: number, payload: Partial<Empleado>): Promise<void> => {
+    await api.put(`/Empleados/${id}`, payload);
   },
 
-  // Eliminar empleado
+  // Eliminar empleado (con manejo avanzado de errores)
   delete: async (id: number): Promise<void> => {
     try {
-      await axios.delete(`${API_BASE_URL}/Empleados/${id}`);
+      await api.delete(`/Empleados/${id}`);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
+      if (error instanceof Error) {
+        // Si ya viene transformado por interceptor, respétalo
+        throw error;
+      }
+
+      if ((error as AxiosError).isAxiosError) {
         const axiosError = error as AxiosError<ErrorResponse>;
 
         if (axiosError.response) {
           const { status, data } = axiosError.response;
 
-          // Extraer el mensaje correcto (puede venir en 'message' o 'error')
           const errorMessage =
             data?.message || data?.error || "Error al eliminar el empleado";
 
-          // Error 409 - Conflicto (tiene subordinados u otra restricción)
           if (status === 409) {
-            // Personalizar el mensaje según el código de error
             if (data?.error === "EMPLEADO_TIENE_SUBORDINADOS") {
               throw new Error(
-                "No se puede eliminar el empleado porque tiene subordinados asignados. " +
-                  "Por favor, reasigne los subordinados antes de continuar."
+                "No se puede eliminar el empleado porque tiene subordinados asignados. Reasígnelos antes de continuar.",
               );
-            }
-
-            if (data?.error === "OPERATION_NOT_ALLOWED") {
-              throw new Error(errorMessage);
             }
 
             throw new Error(errorMessage);
           }
 
-          // Error 404 - No encontrado
           if (status === 404) {
             throw new Error("Empleado no encontrado");
           }
 
-          // Error 400 - Solicitud incorrecta
           if (status === 400) {
-            throw new Error(`${errorMessage}`);
+            throw new Error(errorMessage);
           }
 
-          // Otros errores
-          throw new Error(`${errorMessage}`);
+          throw new Error(errorMessage);
         }
       }
 
-      // Error no relacionado con Axios
-      throw new Error("Error de conexión al eliminar el empleado");
+      throw new Error("Error inesperado al eliminar el empleado");
     }
   },
 };
