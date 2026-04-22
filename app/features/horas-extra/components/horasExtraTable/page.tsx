@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import TableHeader from "@/components/TableHeader";
@@ -37,6 +40,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FileDown, ChevronDown, FileText, FileSpreadsheet } from "lucide-react";
+import { HorasExtraPDF } from "@/app/features/generar-reportes/components/templates/horas-extra-pdf";
+
+// Dynamic import para PDFDownloadLink
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => null },
+);
+
+function getFileName(ext: string): string {
+  const date = new Date().toISOString().split("T")[0];
+  return `horas-extra-${date}.${ext}`;
+}
+
+function buildSheetData(horasExtras: HoraExtra[]) {
+  return horasExtras.map((h) => ({
+    Empleado: h.nombreEmpleado || h.codigoEmpleado,
+    "Fecha Inicio": h.fechaInicio.split("T")[0],
+    "Hora Inicio": h.fechaInicio.split("T")[1]?.split(".")[0] || "",
+    "Fecha Fin": h.fechaFin.split("T")[0],
+    "Hora Fin": h.fechaFin.split("T")[1]?.split(".")[0] || "",
+    "Horas Totales": h.horasTotales,
+    Motivo: h.motivo,
+    Estado: h.estadoSolicitud,
+  }));
+}
+
+function exportToExcel(horasExtras: HoraExtra[]): void {
+  const data = buildSheetData(horasExtras);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "HorasExtra");
+  XLSX.writeFile(workbook, getFileName("xlsx"));
+}
+
+function exportToCSV(horasExtras: HoraExtra[]): void {
+  const data = buildSheetData(horasExtras);
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = getFileName("csv");
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function HorasExtraTable() {
   const {
@@ -60,9 +118,11 @@ export function HorasExtraTable() {
   const [openRechazar, setOpenRechazar] = useState(false);
 
   const [selectedHoraExtra, setSelectedHoraExtra] = useState<HoraExtra | null>(
-    null
+    null,
   );
   const [jefeAprobador, setJefeAprobador] = useState<number | null>(null);
+
+  // ... (resto de handlers igual que antes)
 
   const handleCreate = async (data: CrearHoraExtraDTO) => {
     try {
@@ -107,12 +167,10 @@ export function HorasExtraTable() {
         estadoSolicitud: EstadoSolicitud.APROBADA,
         jefeApruebaId: jefeAprobador,
       };
-
       await aprobarRechazarHoraExtra({
         id: selectedHoraExtra.idHoraExtra,
         data: dto,
       });
-
       setOpenAprobar(false);
       setSelectedHoraExtra(null);
       setJefeAprobador(null);
@@ -133,12 +191,10 @@ export function HorasExtraTable() {
         estadoSolicitud: EstadoSolicitud.RECHAZADA,
         jefeApruebaId: jefeAprobador,
       };
-
       await aprobarRechazarHoraExtra({
         id: selectedHoraExtra.idHoraExtra,
         data: dto,
       });
-
       setOpenRechazar(false);
       setSelectedHoraExtra(null);
       setJefeAprobador(null);
@@ -178,7 +234,7 @@ export function HorasExtraTable() {
     handleEditar,
     handleEliminar,
     handleAprobarClick,
-    handleRechazarClick
+    handleRechazarClick,
   );
 
   if (isLoading) {
@@ -217,15 +273,75 @@ export function HorasExtraTable() {
 
   return (
     <>
-      <TableHeader
-        title="Horas Extra"
-        entity="Solicitud"
-        onAddClick={() => setOpenCreate(true)}
-      />
+      <div className="flex justify-between gap-5">
+        <div className="flex-1">
+          <TableHeader
+            title="Horas Extra"
+            entity="Solicitud"
+            onAddClick={() => setOpenCreate(true)}
+          />
+        </div>
+        <div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileDown className="h-4 w-4" />
+                Exportar
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Selecciona un formato
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              <PDFDownloadLink
+                document={
+                  <HorasExtraPDF
+                    horasExtras={horasExtras}
+                    isAdmin={true} // o según rol del usuario
+                  />
+                }
+                fileName={getFileName("pdf")}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                {({ loading }) => (
+                  <DropdownMenuItem
+                    disabled={loading}
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span>{loading ? "Generando..." : "Exportar PDF"}</span>
+                  </DropdownMenuItem>
+                )}
+              </PDFDownloadLink>
+
+              <DropdownMenuItem
+                onSelect={() => exportToExcel(horasExtras)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                <span>Exportar Excel</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onSelect={() => exportToCSV(horasExtras)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <FileDown className="h-4 w-4 text-blue-500" />
+                <span>Exportar CSV</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <DataTable columns={tableColumns} data={horasExtras} />
 
-      {/* DIÁLOGOS */}
+      {/* Diálogos */}
       <HoraExtraCreateDialog
         open={openCreate}
         onOpenChange={setOpenCreate}
@@ -277,7 +393,6 @@ export function HorasExtraTable() {
               Seleccione el jefe que aprueba esta solicitud de horas extra
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div>
               <Label htmlFor="jefeAprobador">Jefe Aprobador *</Label>
@@ -304,7 +419,6 @@ export function HorasExtraTable() {
               </Select>
             </div>
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"
@@ -340,7 +454,6 @@ export function HorasExtraTable() {
               Seleccione el jefe que rechaza esta solicitud de horas extra
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div>
               <Label htmlFor="jefeAprobador">Jefe que Rechaza *</Label>
@@ -367,7 +480,6 @@ export function HorasExtraTable() {
               </Select>
             </div>
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"

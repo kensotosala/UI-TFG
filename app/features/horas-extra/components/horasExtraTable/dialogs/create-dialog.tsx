@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +20,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Clock } from "lucide-react";
 import { CrearHoraExtraDTO, TipoHoraExtra } from "../../../types";
 import { useEmpleados } from "@/app/features/empleados/hooks/useEmpleado";
-import { useUsuariosAdmin } from "@/app/features/empleados/hooks/useUsuarios";
 
 interface HoraExtraCreateDialogProps {
   open: boolean;
@@ -30,121 +30,269 @@ interface HoraExtraCreateDialogProps {
   onCreate: (data: CrearHoraExtraDTO) => Promise<void>;
 }
 
-type FormErrors = Partial<Record<keyof CrearHoraExtraDTO, string>>;
+// ──────────────────────────────────────────────────────────
+// Tipos y helpers para hora en formato 12h
+// ──────────────────────────────────────────────────────────
+interface TimeValue {
+  hours: string;
+  minutes: string;
+  period: "AM" | "PM";
+}
 
-const initialFormData: CrearHoraExtraDTO = {
-  empleadoId: 0,
-  fechaInicio: "",
-  fechaFin: "",
-  tipoHoraExtra: TipoHoraExtra.PENDIENTE,
-  motivo: "",
-  jefeApruebaId: undefined,
-};
+const emptyTime: TimeValue = { hours: "", minutes: "", period: "AM" };
 
+// Convierte "HH:mm" (24h) a TimeValue (12h)
+function from24Hour(time24: string): TimeValue {
+  if (!time24) return emptyTime;
+  const [hStr, mStr] = time24.split(":");
+  let h = parseInt(hStr, 10);
+  const period: "AM" | "PM" = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return { hours: String(h), minutes: mStr ?? "00", period };
+}
+
+// Convierte TimeValue a "HH:mm" (24h) para el backend
+function to24Hour(time: TimeValue): string {
+  if (!time.hours || !time.minutes) return "";
+  let h = parseInt(time.hours, 10);
+  if (time.period === "AM" && h === 12) h = 0;
+  if (time.period === "PM" && h !== 12) h += 12;
+  return `${String(h).padStart(2, "0")}:${time.minutes.padStart(2, "0")}`;
+}
+
+// Formatea una hora en string "HH:mm" a formato 12h para mostrar
+function formatTime12(time24?: string): string {
+  if (!time24) return "";
+  const [h, m] = time24.split(":");
+  const hour = parseInt(h, 10);
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${m} ${period}`;
+}
+
+// Componente de entrada de hora (12h)
+function TimeInput({
+  label,
+  value,
+  onChange,
+  current,
+}: {
+  label: string;
+  value: TimeValue;
+  onChange: (val: TimeValue) => void;
+  current?: string;
+}) {
+  return (
+    <div>
+      <Label className="mb-2">{label}</Label>
+      <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-background focus-within:ring-2 focus-within:ring-ring">
+        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+
+        <input
+          type="number"
+          min={1}
+          max={12}
+          placeholder="HH"
+          value={value.hours}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "" || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
+              onChange({ ...value, hours: val });
+            }
+          }}
+          className="w-8 text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+
+        <span className="text-muted-foreground">:</span>
+
+        <input
+          type="number"
+          min={0}
+          max={59}
+          placeholder="MM"
+          value={value.minutes}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+              onChange({ ...value, minutes: val });
+            }
+          }}
+          className="w-8 text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+
+        <div className="ml-1 flex rounded overflow-hidden border text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, period: "AM" })}
+            className={`px-2 py-0.5 transition-colors ${
+              value.period === "AM"
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, period: "PM" })}
+            className={`px-2 py-0.5 transition-colors ${
+              value.period === "PM"
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+      {current && (
+        <p className="text-xs text-muted-foreground mt-1">Actual: {current}</p>
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+// Componente principal
+// ──────────────────────────────────────────────────────────
 export function HoraExtraCreateDialog({
   open,
   onOpenChange,
   onCreate,
 }: HoraExtraCreateDialogProps) {
-  const [formData, setFormData] = useState<CrearHoraExtraDTO>(initialFormData);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { empleadosSinHorasExtraEnProceso } = useEmpleados();
-  const { usuariosAdmin } = useUsuariosAdmin();
 
-  const getLocalDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
+  // Estados separados para fecha (YYYY-MM-DD) y hora (TimeValue)
+  const [fechaInicioDate, setFechaInicioDate] = useState("");
+  const [horaInicio, setHoraInicio] = useState<TimeValue>(emptyTime);
+  const [fechaFinDate, setFechaFinDate] = useState("");
+  const [horaFin, setHoraFin] = useState<TimeValue>(emptyTime);
+
+  const [empleadoId, setEmpleadoId] = useState<number>(0);
+  const [motivo, setMotivo] = useState("");
+  const [errors, setErrors] = useState<{
+    empleadoId?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    motivo?: string;
+  }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Referencia de hora actual (formato 12h)
+  const [currentDateTime, setCurrentDateTime] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      // Mostrar la fecha/hora actual como referencia
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("es-CR");
+      const timeStr = formatTime12(`${now.getHours()}:${now.getMinutes()}`);
+      setCurrentDateTime(`${dateStr} ${timeStr}`);
+    }
+  }, [open]);
+
+  // Función para construir el datetime ISO a partir de fecha + hora 12h
+  const buildDateTime = (dateStr: string, time: TimeValue): string | null => {
+    if (!dateStr || !time.hours || !time.minutes) return null;
+    const time24 = to24Hour(time);
+    if (!time24) return null;
+    return `${dateStr}T${time24}:00`;
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+  // Obtener fecha/hora inicio como Date object (para validaciones)
+  const getInicioDate = (): Date | null => {
+    const iso = buildDateTime(fechaInicioDate, horaInicio);
+    return iso ? new Date(iso) : null;
+  };
 
-    if (!formData.empleadoId || formData.empleadoId === 0) {
+  const getFinDate = (): Date | null => {
+    const iso = buildDateTime(fechaFinDate, horaFin);
+    return iso ? new Date(iso) : null;
+  };
+
+  // Validaciones
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Empleado
+    if (!empleadoId || empleadoId === 0) {
       newErrors.empleadoId = "Debes seleccionar un empleado";
     }
 
-    if (!formData.fechaInicio) {
-      newErrors.fechaInicio = "La fecha de inicio es obligatoria";
-    }
-
-    if (!formData.fechaFin) {
-      newErrors.fechaFin = "La fecha de fin es obligatoria";
-    }
-
-    if (formData.fechaInicio && formData.fechaFin) {
-      const inicio = new Date(formData.fechaInicio);
-      const fin = new Date(formData.fechaFin);
-
-      if (fin <= inicio) {
-        newErrors.fechaFin =
-          "La fecha de fin debe ser posterior a la de inicio";
-      }
-
-      const limiteMaximo = new Date();
-      limiteMaximo.setMonth(limiteMaximo.getMonth() + 3);
-
-      if (inicio > limiteMaximo) {
-        newErrors.fechaInicio = "Máximo 3 meses de anticipación";
-      }
-    }
-
-    if (!formData.motivo.trim()) {
+    // Motivo
+    if (!motivo.trim()) {
       newErrors.motivo = "El motivo es obligatorio";
+    } else if (motivo.length < 5) {
+      newErrors.motivo = "El motivo debe tener al menos 5 caracteres";
     }
 
-    if (formData.fechaInicio && formData.fechaFin) {
-      const inicio = new Date(formData.fechaInicio);
-      const fin = new Date(formData.fechaFin);
-
-      const horaInicio = inicio.getHours();
-      const horaFin = fin.getHours();
-
-      const HORA_FIN_JORNADA = 17;
-      const MAX_HORAS_EXTRA = 4;
-      const HORA_MAXIMA_PERMITIDA = 21;
-
-      if (horaInicio < HORA_FIN_JORNADA) {
-        newErrors.fechaInicio =
-          "Las horas extra deben iniciar después de las 5:00 pm";
-      }
-
-      if (horaFin > HORA_MAXIMA_PERMITIDA) {
-        newErrors.fechaFin = "Las horas extra no pueden superar las 9:00 pm";
-      }
-
-      const diffMs = fin.getTime() - inicio.getTime();
-      const diffHoras = diffMs / (1000 * 60 * 60);
-
-      if (diffHoras > MAX_HORAS_EXTRA) {
-        newErrors.fechaFin =
-          "No se pueden solicitar más de 4 horas extra por día";
-      }
-
-      if (fin <= inicio) {
-        newErrors.fechaFin =
-          "La fecha de fin debe ser posterior a la de inicio";
-      }
+    // Fechas y horas
+    if (!fechaInicioDate || !horaInicio.hours || !horaInicio.minutes) {
+      newErrors.fechaInicio = "Debes seleccionar fecha y hora de inicio";
+    }
+    if (!fechaFinDate || !horaFin.hours || !horaFin.minutes) {
+      newErrors.fechaFin = "Debes seleccionar fecha y hora de fin";
     }
 
+    const inicio = getInicioDate();
+    const fin = getFinDate();
     const ahora = new Date();
 
-    if (formData.fechaInicio) {
-      const inicio = new Date(formData.fechaInicio);
-
+    if (inicio && fin) {
+      // Validar fechas pasadas
       if (inicio < ahora) {
         newErrors.fechaInicio =
           "No puedes seleccionar una fecha u hora en el pasado";
       }
-    }
-
-    if (formData.fechaFin) {
-      const fin = new Date(formData.fechaFin);
-
       if (fin < ahora) {
         newErrors.fechaFin =
           "No puedes seleccionar una fecha u hora en el pasado";
+      }
+
+      // Fin posterior a inicio
+      if (fin <= inicio) {
+        newErrors.fechaFin =
+          "La fecha y hora de fin deben ser posteriores al inicio";
+      }
+
+      // Máximo 3 meses de anticipación
+      const limiteMaximo = new Date();
+      limiteMaximo.setMonth(limiteMaximo.getMonth() + 3);
+      if (inicio > limiteMaximo) {
+        newErrors.fechaInicio = "Máximo 3 meses de anticipación";
+      }
+
+      // Validaciones específicas para horas extra (solo si es el mismo día)
+      const mismaFecha = inicio.toDateString() === fin.toDateString();
+      if (mismaFecha) {
+        const horaInicioNum = inicio.getHours();
+        const horaFinNum = fin.getHours();
+        const HORA_FIN_JORNADA = 17; // 5:00 PM
+        const HORA_MAXIMA_PERMITIDA = 21; // 9:00 PM
+        const MAX_HORAS_EXTRA = 4;
+
+        if (horaInicioNum < HORA_FIN_JORNADA) {
+          newErrors.fechaInicio =
+            "Las horas extra deben iniciar después de las 5:00 pm";
+        }
+        if (horaFinNum > HORA_MAXIMA_PERMITIDA) {
+          newErrors.fechaFin =
+            "Las horas extra no pueden terminar después de las 9:00 pm";
+        }
+        const diffHoras = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+        if (diffHoras > MAX_HORAS_EXTRA) {
+          newErrors.fechaFin = `No se pueden solicitar más de ${MAX_HORAS_EXTRA} horas extra por día`;
+        }
+      } else {
+        // Si son días distintos, limitamos a un máximo de 1 día
+        const diffDias = Math.ceil(
+          (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        if (diffDias > 1) {
+          newErrors.fechaFin =
+            "La solicitud de horas extra no debe abarcar más de un día";
+        }
       }
     }
 
@@ -152,11 +300,8 @@ export function HoraExtraCreateDialog({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = <K extends keyof CrearHoraExtraDTO>(
-    field: K,
-    value: CrearHoraExtraDTO[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Limpiar errores al modificar un campo
+  const clearFieldError = (field: keyof typeof errors) => {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -166,17 +311,21 @@ export function HoraExtraCreateDialog({
     e.preventDefault();
     if (!validateForm()) return;
 
+    const inicioISO = buildDateTime(fechaInicioDate, horaInicio);
+    const finISO = buildDateTime(fechaFinDate, horaFin);
+    if (!inicioISO || !finISO) return;
+
+    const payload: CrearHoraExtraDTO = {
+      empleadoId,
+      fechaInicio: inicioISO,
+      fechaFin: finISO,
+      motivo,
+      tipoHoraExtra: TipoHoraExtra.PENDIENTE,
+      jefeApruebaId: undefined, // opcional
+    };
+
     setIsSubmitting(true);
     try {
-      const payload: CrearHoraExtraDTO = {
-        empleadoId: formData.empleadoId,
-        fechaInicio: formData.fechaInicio,
-        fechaFin: formData.fechaFin,
-        motivo: formData.motivo,
-        jefeApruebaId: formData.jefeApruebaId,
-        tipoHoraExtra: formData.tipoHoraExtra,
-      };
-
       await onCreate(payload);
       handleClose();
     } catch (error: any) {
@@ -189,13 +338,21 @@ export function HoraExtraCreateDialog({
   };
 
   const handleClose = () => {
-    setFormData(initialFormData);
+    setEmpleadoId(0);
+    setFechaInicioDate("");
+    setHoraInicio(emptyTime);
+    setFechaFinDate("");
+    setHoraFin(emptyTime);
+    setMotivo("");
     setErrors({});
     onOpenChange(false);
   };
 
+  // Obtener fecha mínima para los inputs de tipo date (hoy)
+  const today = new Date().toISOString().split("T")[0];
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="mb-2">
@@ -205,12 +362,22 @@ export function HoraExtraCreateDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Referencia de fecha/hora actual */}
+          <div className="bg-muted p-3 rounded-md flex items-center gap-2 text-sm">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Fecha y hora actual:</span>
+            <span className="font-medium">{currentDateTime || "..."}</span>
+          </div>
+
           {/* Empleado */}
           <div className="space-y-2">
             <Label>Empleado *</Label>
             <Select
-              value={formData.empleadoId?.toString() || ""}
-              onValueChange={(val) => handleChange("empleadoId", parseInt(val))}
+              value={empleadoId?.toString() || ""}
+              onValueChange={(val) => {
+                setEmpleadoId(parseInt(val));
+                clearFieldError("empleadoId");
+              }}
             >
               <SelectTrigger
                 className={errors.empleadoId ? "border-destructive" : ""}
@@ -233,62 +400,60 @@ export function HoraExtraCreateDialog({
             )}
           </div>
 
-          {/* Fechas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fechaInicio">Inicio *</Label>
-              <Input
-                id="fechaInicio"
-                type="datetime-local"
-                min={getLocalDateTime()}
-                className={errors.fechaInicio ? "border-destructive" : ""}
-                value={formData.fechaInicio}
-                onChange={(e) => handleChange("fechaInicio", e.target.value)}
-              />
-              {errors.fechaInicio && (
-                <p className="text-xs text-destructive">{errors.fechaInicio}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fechaFin">Fin *</Label>
-              <Input
-                id="fechaFin"
-                type="datetime-local"
-                min={getLocalDateTime()}
-                className={errors.fechaFin ? "border-destructive" : ""}
-                value={formData.fechaFin}
-                onChange={(e) => handleChange("fechaFin", e.target.value)}
-              />
-              {errors.fechaFin && (
-                <p className="text-xs text-destructive">{errors.fechaFin}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Tipo
+          {/* Fecha y hora de inicio */}
           <div className="space-y-2">
-            <Label>Tipo de Hora Extra (Referencia)</Label>
-            <Select
-              value={formData.tipoHoraExtra}
-              onValueChange={(val) =>
-                handleChange("tipoHoraExtra", val as TipoHoraExtra)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(TipoHoraExtra).map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>
-                    {tipo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Este campo es solo informativo y no afecta el registro
+            <Label>Fecha de Inicio *</Label>
+            <Input
+              type="date"
+              value={fechaInicioDate}
+              min={today}
+              onChange={(e) => {
+                setFechaInicioDate(e.target.value);
+                clearFieldError("fechaInicio");
+              }}
+              className={errors.fechaInicio ? "border-destructive" : ""}
+            />
+          </div>
+          <TimeInput
+            label="Hora de Inicio"
+            value={horaInicio}
+            onChange={(val) => {
+              setHoraInicio(val);
+              clearFieldError("fechaInicio");
+            }}
+          />
+
+          {/* Fecha y hora de fin */}
+          <div className="space-y-2">
+            <Label>Fecha de Fin *</Label>
+            <Input
+              type="date"
+              value={fechaFinDate}
+              min={fechaInicioDate || today}
+              onChange={(e) => {
+                setFechaFinDate(e.target.value);
+                clearFieldError("fechaFin");
+              }}
+              className={errors.fechaFin ? "border-destructive" : ""}
+            />
+          </div>
+          <TimeInput
+            label="Hora de Fin"
+            value={horaFin}
+            onChange={(val) => {
+              setHoraFin(val);
+              clearFieldError("fechaFin");
+            }}
+          />
+
+          {errors.fechaInicio && (
+            <p className="text-xs text-destructive -mt-2">
+              {errors.fechaInicio}
             </p>
-          </div> */}
+          )}
+          {errors.fechaFin && (
+            <p className="text-xs text-destructive -mt-2">{errors.fechaFin}</p>
+          )}
 
           {/* Motivo */}
           <div className="space-y-2">
@@ -296,43 +461,18 @@ export function HoraExtraCreateDialog({
             <Textarea
               id="motivo"
               className={errors.motivo ? "border-destructive" : ""}
-              value={formData.motivo}
-              onChange={(e) => handleChange("motivo", e.target.value)}
-              placeholder="Describa el motivo..."
+              value={motivo}
+              onChange={(e) => {
+                setMotivo(e.target.value);
+                clearFieldError("motivo");
+              }}
+              placeholder="Describa el motivo de la solicitud..."
+              rows={3}
             />
             {errors.motivo && (
               <p className="text-xs text-destructive">{errors.motivo}</p>
             )}
           </div>
-
-          {/* Jefe (Opcional)
-          <div className="space-y-2">
-            <Label>Jefe que Aprueba (Opcional)</Label>
-
-            <Select
-              value={formData.jefeApruebaId?.toString() || ""}
-              onValueChange={(val) =>
-                handleChange("jefeApruebaId", val ? parseInt(val) : undefined)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un jefe" />
-              </SelectTrigger>
-
-              <SelectContent>
-                {usuariosAdmin
-                  .filter((u) => u.empleadoId !== formData.empleadoId)
-                  .map((u) => (
-                    <SelectItem
-                      key={u.idUsuario}
-                      value={u.idUsuario.toString()}
-                    >
-                      {u.nombreEmpleado}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div> */}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button
