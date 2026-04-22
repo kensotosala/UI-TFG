@@ -22,13 +22,12 @@ export interface Empleado {
 }
 
 export interface EmpleadoCreateDTO {
-  codigoEmpleado: string;
   nombre: string;
   primerApellido: string;
   segundoApellido: string;
   email: string;
   telefono: string;
-  fechaContratacion: string; // YYYY-MM-DD
+  fechaContratacion: string;
   puestoId: number;
   departamentoId: number;
   jefeInmediatoId?: number;

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Empleado } from "../../../types";
+import { Empleado, EmpleadoCreateDTO } from "../../../types";
 import {
   Select,
   SelectContent,
@@ -32,10 +32,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { useRoles } from "@/app/features/roles/hooks/useRoles";
 
-type EmpleadoCreateForm = Omit<Empleado, "id" | "idEmpleado" | "estado"> & {
-  nombreUsuario: string;
-  password: string;
-};
+type EmpleadoCreateForm = EmpleadoCreateDTO;
 
 interface EmpleadoCreateDialogProps {
   open: boolean;
@@ -44,7 +41,6 @@ interface EmpleadoCreateDialogProps {
 }
 
 const initialFormData: EmpleadoCreateForm = {
-  codigoEmpleado: "",
   nombre: "",
   primerApellido: "",
   segundoApellido: "",
@@ -89,6 +85,12 @@ export function EmpleadoCreateDialog({
     e.preventDefault();
     setIsSubmitting(true);
 
+    if (formData.telefono.length !== 8) {
+      alert("El teléfono debe tener exactamente 8 dígitos");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       console.log("📦 Payload enviado al backend:", formData);
 
@@ -114,18 +116,6 @@ export function EmpleadoCreateDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="input-required" className="mb-2">
-                Código *
-              </Label>
-              <Input
-                id="input-required"
-                value={formData.codigoEmpleado}
-                onChange={(e) => handleChange("codigoEmpleado", e.target.value)}
-                required
-              />
-            </div>
-
             <div>
               <Label htmlFor="input-required" className="mb-2">
                 Email *
@@ -185,8 +175,15 @@ export function EmpleadoCreateDialog({
                 id="input-required form-phone"
                 type="tel"
                 value={formData.telefono}
-                placeholder="8888-8888"
-                onChange={(e) => handleChange("telefono", e.target.value)}
+                placeholder="88888888"
+                inputMode="numeric"
+                pattern="[0-9]{8}"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  if (value.length <= 8) {
+                    handleChange("telefono", value);
+                  }
+                }}
               />
             </div>
 

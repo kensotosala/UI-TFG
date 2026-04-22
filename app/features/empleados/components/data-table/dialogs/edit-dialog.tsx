@@ -27,6 +27,7 @@ type FormErrors = {
   nombre?: string;
   primerApellido?: string;
   email?: string;
+  telefono?: string;
 };
 
 export function EmpleadoEditDialog({
@@ -53,6 +54,10 @@ export function EmpleadoEditDialog({
     if (!data.primerApellido.trim())
       newErrors.primerApellido = "El primer apellido es obligatorio";
     if (!data.email.trim()) newErrors.email = "El email es obligatorio";
+
+    if (!data.telefono || data.telefono.length !== 8) {
+      newErrors.telefono = "El teléfono debe tener 8 dígitos";
+    }
 
     return newErrors;
   };
@@ -134,8 +139,18 @@ export function EmpleadoEditDialog({
             <Label htmlFor="telefono">Teléfono</Label>
             <Input
               id="telefono"
+              type="tel"
               value={form.telefono ?? ""}
-              onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+              placeholder="88888888"
+              maxLength={8}
+              inputMode="numeric"
+              pattern="[0-9]{8}"
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                if (value.length <= 8) {
+                  setForm({ ...form, telefono: value });
+                }
+              }}
             />
           </div>
 

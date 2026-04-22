@@ -37,8 +37,8 @@ export const empleadoService = {
 
   // Crear empleado
   create: async (payload: EmpleadoCreateDTO): Promise<Empleado> => {
-    const { data } = await api.post("/Empleados", payload);
-    return data;
+    const response = await api.post("/Empleados", payload);
+    return response.data.data ?? response.data;
   },
 
   // Actualizar empleado
