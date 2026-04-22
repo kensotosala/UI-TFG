@@ -68,6 +68,7 @@ export const PermisoCreateDialog = ({
               id="fechaPermiso"
               type="date"
               value={formData.fechaPermiso}
+              min={new Date().toISOString().split("T")[0]}
               onChange={(e) =>
                 setFormData({ ...formData, fechaPermiso: e.target.value })
               }
