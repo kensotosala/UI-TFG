@@ -58,7 +58,7 @@ export function DepartamentoDetailsDialog({
               <p>{departamento.descripcion}</p>
             </div>
 
-            <div>
+            {/* <div>
               <p className="text-muted-foreground">Jefe de Departamento</p>
               <p>{departamento.idJefeDepartamento ?? "-"}</p>
             </div>
@@ -83,7 +83,7 @@ export function DepartamentoDetailsDialog({
                     )
                   : "-"}
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </DialogContent>
