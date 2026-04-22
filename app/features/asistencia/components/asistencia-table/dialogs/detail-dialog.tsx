@@ -169,11 +169,11 @@ export function AsistenciaDetailsDialog({
                 value={asistencia.horaSalida ?? undefined}
               />
 
-              <Tiempo
+              {/* <Tiempo
                 label="Horas Trabajadas"
                 minutos={asistencia.horasTrabajadas}
                 color="blue"
-              />
+              /> */}
 
               {asistencia.tiempoExtra! > 0 && (
                 <Tiempo
@@ -264,7 +264,7 @@ const Hora = ({ label, value }: { label: string; value?: string }) => (
     <div className="flex items-center gap-2">
       <Clock className="h-4 w-4 text-gray-500" />
       <p className="font-mono">
-        {value ? format(new Date(`2000-01-01T${value}`), "HH:mm") : "-"}
+        {value ? format(new Date(`2000-01-01T${value}`), "hh:mm a") : "-"}
       </p>
     </div>
   </div>

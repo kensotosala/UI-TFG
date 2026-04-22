@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ActualizarIncapacidadDTO, RegistrarIncapacidadDTO } from "../types";
-import incapacidadService from "../services/incapacidad.services";
 import { toast } from "react-toastify";
+import incapacidadService from "@/app/features/incapacidades/services/incapacidad.service";
+import {
+  ActualizarIncapacidadDTO,
+  RegistrarIncapacidadDTO,
+} from "@/app/features/incapacidades/types";
 
 export const useIncapacidadMutations = () => {
   const queryClient = useQueryClient();
@@ -12,7 +15,7 @@ export const useIncapacidadMutations = () => {
   const registrarIncapacidad = useMutation({
     mutationFn: (data: RegistrarIncapacidadDTO & { archivo?: File }) => {
       const { archivo, ...dto } = data;
-      return incapacidadService.registrarIncapacidad(dto, archivo);
+      return incapacidadService.RegistrarIncapacidad(dto, archivo);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });
@@ -28,7 +31,7 @@ export const useIncapacidadMutations = () => {
    */
   const actualizarIncapacidad = useMutation({
     mutationFn: (dto: ActualizarIncapacidadDTO) =>
-      incapacidadService.actualizarIncapacidad(dto.incapacidadId, dto),
+      incapacidadService.ActualizarIncapacidad(dto.incapacidadId, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });
       toast.success("Incapacidad actualizada correctamente");
@@ -42,7 +45,7 @@ export const useIncapacidadMutations = () => {
    * Eliminar Incapacidad
    */
   const eliminarIncapacidad = useMutation({
-    mutationFn: (id: number) => incapacidadService.eliminarIncapacidad(id),
+    mutationFn: (id: number) => incapacidadService.EliminarIncapacidad(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });
       toast.success("Incapacidad eliminada correctamente");

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/asistencias/AsistenciaDetailsDialog.tsx
 "use client";
 
 import {
@@ -239,17 +238,35 @@ const Info = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const Hora = ({ label, value }: { label: string; value?: string }) => (
-  <div>
-    <p className="text-xs text-muted-foreground">{label}</p>
-    <div className="flex items-center gap-2">
-      <Clock className="h-4 w-4 text-gray-500" />
-      <p className="font-mono">
-        {value ? format(new Date(`2000-01-01T${value}`), "HH:mm") : "-"}
-      </p>
+const Hora = ({ label, value }: { label: string; value?: string }) => {
+  // Función para validar formato HH:MM o HH:MM:SS
+  const isValidTime = (timeStr?: string): timeStr is string => {
+    if (!timeStr) return false;
+    const regex = /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+    return regex.test(timeStr);
+  };
+
+  const formatTime = (timeStr: string): string => {
+    const [hours, minutes] = timeStr.split(":");
+    const h = parseInt(hours, 10);
+    const m = parseInt(minutes, 10);
+    const ampm = h >= 12 ? "pm" : "am";
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  };
+
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <div className="flex items-center gap-2">
+        <Clock className="h-4 w-4 text-gray-500" />
+        <p className="font-mono">
+          {isValidTime(value) ? formatTime(value) : "-"}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Tiempo = ({
   label,

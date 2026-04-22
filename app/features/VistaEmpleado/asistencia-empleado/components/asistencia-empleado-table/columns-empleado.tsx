@@ -78,7 +78,7 @@ export const columnsEmpleado = (
       const hora = getValue<string | null>();
       return (
         <div className="text-center font-mono">
-          {hora ? format(new Date(`2000-01-01T${hora}`), "HH:mm") : "-"}
+          {hora ? format(new Date(`2000-01-01T${hora}`), "hh:mm a") : "-"}
         </div>
       );
     },
@@ -90,32 +90,32 @@ export const columnsEmpleado = (
       const hora = getValue<string | null>();
       return (
         <div className="text-center font-mono">
-          {hora ? format(new Date(`2000-01-01T${hora}`), "HH:mm") : "-"}
+          {hora ? format(new Date(`2000-01-01T${hora}`), "hh:mm a") : "-"}
         </div>
       );
     },
   },
-  {
-    accessorKey: "horasTrabajadas",
-    header: () => <div className="text-center">Horas Trabajadas</div>,
-    cell: ({ getValue }) => (
-      <div className="text-center font-medium">
-        {formatearMinutos(getValue<number>())}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "tiempoExtra",
-    header: () => <div className="text-center">Tiempo Extra</div>,
-    cell: ({ getValue }) => {
-      const minutos = getValue<number>();
-      return (
-        <div className="text-center font-medium text-orange-600">
-          {minutos > 0 ? formatearMinutos(minutos) : "-"}
-        </div>
-      );
-    },
-  },
+  // {
+  //   accessorKey: "horasTrabajadas",
+  //   header: () => <div className="text-center">Horas Trabajadas</div>,
+  //   cell: ({ getValue }) => (
+  //     <div className="text-center font-medium">
+  //       {formatearMinutos(getValue<number>())}
+  //     </div>
+  //   ),
+  // },
+  // {
+  //   accessorKey: "tiempoExtra",
+  //   header: () => <div className="text-center">Tiempo Extra</div>,
+  //   cell: ({ getValue }) => {
+  //     const minutos = getValue<number>();
+  //     return (
+  //       <div className="text-center font-medium text-orange-600">
+  //         {minutos > 0 ? formatearMinutos(minutos) : "-"}
+  //       </div>
+  //     );
+  //   },
+  // },
   {
     accessorKey: "estado",
     header: "Estado",
