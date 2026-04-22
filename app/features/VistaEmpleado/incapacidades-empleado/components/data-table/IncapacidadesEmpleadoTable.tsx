@@ -22,7 +22,10 @@ import { DataTable } from "./data-table-incapacidades";
 import { IncapacidadDetailsDialog } from "./dialogs/details-dialog";
 import { IncapacidadDeleteDialogEmpleado } from "./dialogs/IncapacidadDeleteDialogEmpleado";
 import { IncapacidadesPDF } from "@/app/features/generar-reportes/components/templates/incapacidades-pdf";
-import { Incapacidad } from "@/app/features/incapacidades/types";
+import {
+  Incapacidad,
+  RegistrarIncapacidadDTO,
+} from "@/app/features/incapacidades/types";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -35,7 +38,6 @@ function calcularDias(fechaInicio: string, fechaFin: string): number {
   }
 }
 
-// Feature para exportar reportes
 const PDFDownloadLink = dynamic(
   () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
   { ssr: false, loading: () => null },
@@ -79,27 +81,19 @@ function exportToCSV(incapacidades: Incapacidad[]): void {
 }
 
 export function IncapacidadesEmpleadoTable() {
-  // Hook que trea las incapacidades y la funciones CRUD
   const { incapacidades, isLoading, registrar, eliminar, isEliminando } =
     useIncapacidadesEmpleado();
 
-  // Estados para controlar los dialogs
   const [openCreate, setOpenCreate] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openView, setOpenView] = useState(false);
 
-  // Estado para cuando se selecciona una incapacidad
   const [selectedIncapacidad, setSelectedIncapacidad] =
     useState<Incapacidad | null>(null);
 
-  // Handle para crear
-  const handleCreate = async (data: {
-    diagnostico: string;
-    fechaInicio: string;
-    fechaFin: string;
-    tipoIncapacidad: string;
-    archivoAdjunto: File;
-  }) => {
+  const handleCreate = async (
+    data: Omit<RegistrarIncapacidadDTO, "empleadoId">,
+  ) => {
     try {
       await registrar(data);
       setOpenCreate(false);

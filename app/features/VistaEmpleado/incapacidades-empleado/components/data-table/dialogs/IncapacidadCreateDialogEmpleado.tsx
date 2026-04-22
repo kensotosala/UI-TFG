@@ -30,23 +30,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { TIPOS_INCAPACIDAD } from "@/app/features/incapacidades/types";
+import {
+  TIPOS_INCAPACIDAD,
+  IncapacidadCreateDialogProps,
+} from "@/app/features/incapacidades/types";
+import { useAuthContext } from "@/components/providers/AuthProvider";
 
 const MAX_FILE_SIZE_MB = 5;
 const ALLOWED_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"];
-
-// ✅ Props alineadas con handleCreate de la tabla
-interface IncapacidadCreateDialogEmpleadoProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreate: (data: {
-    diagnostico: string;
-    fechaInicio: string;
-    fechaFin: string;
-    tipoIncapacidad: string;
-    archivoAdjunto: File; // ✅ requerido, mismo nombre que RegistrarIncapacidadDTO
-  }) => Promise<void>;
-}
 
 const incapacidadSchema = z
   .object({
@@ -75,7 +66,6 @@ const incapacidadSchema = z
       .string()
       .min(1, "Debes seleccionar un tipo de incapacidad"),
 
-    // ✅ Requerido con validaciones reales de tipo y tamaño
     archivoAdjunto: z
       .instanceof(File, { message: "Debes adjuntar la boleta de incapacidad" })
       .refine(
@@ -105,8 +95,9 @@ export function IncapacidadCreateDialogEmpleado({
   open,
   onOpenChange,
   onCreate,
-}: IncapacidadCreateDialogEmpleadoProps) {
+}: IncapacidadCreateDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuthContext();
 
   const form = useForm<IncapacidadFormValues>({
     resolver: zodResolver(incapacidadSchema),
@@ -115,7 +106,6 @@ export function IncapacidadCreateDialogEmpleado({
       fechaFin: "",
       diagnostico: "",
       tipoIncapacidad: "",
-      // archivoAdjunto no tiene defaultValue — Zod lo exigirá al submit
     },
   });
 
@@ -125,15 +115,17 @@ export function IncapacidadCreateDialogEmpleado({
   };
 
   const onSubmit = async (values: IncapacidadFormValues) => {
+    if (!user?.employeeId) return;
+
     setIsSubmitting(true);
     try {
-      // ✅ "archivoAdjunto" en lugar de "archivo" — coincide con el prop y el DTO
       await onCreate({
         diagnostico: values.diagnostico,
         fechaInicio: values.fechaInicio,
         fechaFin: values.fechaFin,
         tipoIncapacidad: values.tipoIncapacidad,
-        archivoAdjunto: values.archivoAdjunto, // File garantizado por Zod
+        archivoAdjunto: values.archivoAdjunto,
+        empleadoId: user?.employeeId,
       });
       handleClose();
     } catch (error) {
@@ -231,7 +223,6 @@ export function IncapacidadCreateDialogEmpleado({
                   <FormItem>
                     <FormLabel>Fecha de Fin*</FormLabel>
                     <FormControl>
-                      {/* min dinámico según fechaInicio seleccionada */}
                       <Input
                         type="date"
                         min={form.watch("fechaInicio") || hoyStr}
@@ -244,7 +235,6 @@ export function IncapacidadCreateDialogEmpleado({
               />
             </div>
 
-            {/* ✅ Boleta requerida */}
             <FormField
               control={form.control}
               name="archivoAdjunto"

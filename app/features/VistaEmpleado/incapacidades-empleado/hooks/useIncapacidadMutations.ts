@@ -15,7 +15,7 @@ export const useIncapacidadMutations = () => {
   const registrarIncapacidad = useMutation({
     mutationFn: (data: RegistrarIncapacidadDTO & { archivo?: File }) => {
       const { archivo, ...dto } = data;
-      return incapacidadService.RegistrarIncapacidad(dto, archivo);
+      return incapacidadService.RegistrarIncapacidad(dto);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incapacidades"] });

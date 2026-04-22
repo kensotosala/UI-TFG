@@ -58,7 +58,6 @@ class IncapacidadService {
 
   async RegistrarIncapacidad(
     dto: RegistrarIncapacidadDTO,
-    archivo?: File,
   ): Promise<Incapacidad> {
     const formData = new FormData();
     formData.append("EmpleadoId", dto.empleadoId.toString());
@@ -67,8 +66,8 @@ class IncapacidadService {
     formData.append("TipoIncapacidad", dto.tipoIncapacidad);
     formData.append("Diagnostico", dto.diagnostico);
 
-    if (archivo) {
-      formData.append("archivo", archivo);
+    if (dto.archivoAdjunto) {
+      formData.append("archivo", dto.archivoAdjunto);
     }
 
     const { data } = await this.apiClient.post<Incapacidad>(
