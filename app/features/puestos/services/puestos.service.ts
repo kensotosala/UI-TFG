@@ -1,5 +1,5 @@
 import api from "@/lib/axios-config";
-import { Puesto } from "../types";
+import { Puesto, UpdatePuestoDto } from "../types";
 
 const BASE = "/Puestos";
 
@@ -25,9 +25,13 @@ export const puestoService = {
   },
 
   // Actualizar puesto existente
-  update: async (id: number, puesto: Partial<Puesto>): Promise<Puesto> => {
-    const { data } = await api.put<Puesto>(`${BASE}/${id}`, puesto);
-    return data;
+  update: async (id: number, puesto: UpdatePuestoDto): Promise<void> => {
+    const payload = {
+      ...puesto,
+      idPuesto: id,
+    };
+
+    await api.put(`${BASE}/${id}`, payload);
   },
 
   // Eliminar puesto
