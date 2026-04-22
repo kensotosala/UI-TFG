@@ -25,7 +25,7 @@ import { EmpleadoDeleteDialog } from "./dialogs/delete-dialog";
 import { useEmpleados } from "../../hooks/useEmpleado";
 import { useEmpleadoMutations } from "../../hooks/useEmpleadosMutation";
 import { EmpleadoCreateDialog } from "./dialogs/CrearEmpleadoDialog";
-import { EmpleadosPDF } from "@/app/features/generar-reportes/components/empleados-pdf";
+import { EmpleadosPDF } from "@/app/features/generar-reportes/components/templates/empleados-pdf";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PDFDownloadLink = dynamic(

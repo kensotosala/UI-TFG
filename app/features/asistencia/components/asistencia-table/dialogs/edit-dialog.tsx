@@ -1,4 +1,3 @@
-// components/asistencias/AsistenciaEditDialog.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -36,91 +34,174 @@ interface AsistenciaEditDialogProps {
   asistencia: AsistenciaDetallada | null;
 }
 
+interface TimeValue {
+  hours: string;
+  minutes: string;
+  period: "AM" | "PM";
+}
+
+const emptyTime: TimeValue = { hours: "", minutes: "", period: "AM" };
+
+// Convierte "HH:mm" (24h) a TimeValue (12h)
+function from24Hour(time24: string): TimeValue {
+  if (!time24) return emptyTime;
+  const [hStr, mStr] = time24.split(":");
+  let h = parseInt(hStr, 10);
+  const period: "AM" | "PM" = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return { hours: String(h), minutes: mStr ?? "00", period };
+}
+
+// Convierte TimeValue a "HH:mm" (24h) para el backend
+function to24Hour(time: TimeValue): string {
+  if (!time.hours || !time.minutes) return "";
+  let h = parseInt(time.hours, 10);
+  if (time.period === "AM" && h === 12) h = 0;
+  if (time.period === "PM" && h !== 12) h += 12;
+  return `${String(h).padStart(2, "0")}:${time.minutes.padStart(2, "0")}`;
+}
+
+function TimeInput({
+  label,
+  value,
+  onChange,
+  current,
+}: {
+  label: string;
+  value: TimeValue;
+  onChange: (val: TimeValue) => void;
+  current?: string;
+}) {
+  return (
+    <div>
+      <Label className="mb-2">{label}</Label>
+      <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-background focus-within:ring-2 focus-within:ring-ring">
+        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+
+        <input
+          type="number"
+          min={1}
+          max={12}
+          placeholder="HH"
+          value={value.hours}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "" || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
+              onChange({ ...value, hours: val });
+            }
+          }}
+          className="w-8 text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+
+        <span className="text-muted-foreground">:</span>
+
+        <input
+          type="number"
+          min={0}
+          max={59}
+          placeholder="MM"
+          value={value.minutes}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+              onChange({ ...value, minutes: val });
+            }
+          }}
+          className="w-8 text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+
+        <div className="ml-1 flex rounded overflow-hidden border text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, period: "AM" })}
+            className={`px-2 py-0.5 transition-colors ${
+              value.period === "AM"
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, period: "PM" })}
+            className={`px-2 py-0.5 transition-colors ${
+              value.period === "PM"
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+
+      {/* Hora actual como referencia */}
+      {current && (
+        <p className="text-xs text-muted-foreground mt-1">Actual: {current}</p>
+      )}
+    </div>
+  );
+}
+
 export function AsistenciaEditDialog({
   open,
   onOpenChange,
   onUpdate,
   asistencia,
 }: AsistenciaEditDialogProps) {
-  const [formData, setFormData] = useState<ActualizarAsistenciaDTO>({
-    horaEntrada: "",
-    horaSalida: "",
-    estado: EstadoAsistencia.PRESENTE,
-    observaciones: "",
-  });
+  const [estado, setEstado] = useState<EstadoAsistencia>(
+    EstadoAsistencia.PRESENTE,
+  );
+  const [observaciones, setObservaciones] = useState("");
+  const [horaEntrada, setHoraEntrada] = useState<TimeValue>(emptyTime);
+  const [horaSalida, setHoraSalida] = useState<TimeValue>(emptyTime);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Cargar datos de la asistencia cuando cambie o se abra el diálogo
+  // Cargar datos existentes al abrir
   useEffect(() => {
     if (asistencia && open) {
-      console.log("📋 Cargando datos de asistencia:", asistencia);
-      setFormData({
-        horaEntrada: asistencia.horaEntrada || "",
-        horaSalida: asistencia.horaSalida || "",
-        estado: asistencia.estado,
-        observaciones: asistencia.observaciones || "",
-      });
+      setEstado(asistencia.estado);
+      setObservaciones(asistencia.observaciones || "");
+      setHoraEntrada(from24Hour(asistencia.horaEntrada || ""));
+      setHoraSalida(from24Hour(asistencia.horaSalida || ""));
     }
   }, [asistencia, open]);
 
-  const handleChange = <K extends keyof ActualizarAsistenciaDTO>(
-    field: K,
-    value: ActualizarAsistenciaDTO[K]
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!asistencia) {
-      alert("No hay asistencia seleccionada");
-      return;
-    }
+    if (!asistencia) return;
 
     setIsSubmitting(true);
-
     try {
-      // ✅ MEJORADO: Construir payload dinámicamente
-      const payload: ActualizarAsistenciaDTO = {};
+      const payload: ActualizarAsistenciaDTO = { estado };
 
-      // ✅ Siempre incluir estado (es requerido en el backend)
-      payload.estado = formData.estado;
+      const entrada = to24Hour(horaEntrada);
+      const salida = to24Hour(horaSalida);
 
-      // ✅ IMPORTANTE: Solo incluir horaEntrada si tiene valor
-      // Si el campo está vacío, NO lo enviamos (el backend mantendrá el valor actual)
-      if (formData.horaEntrada && formData.horaEntrada.trim() !== "") {
-        payload.horaEntrada = formData.horaEntrada.trim();
-      }
-
-      // ✅ IMPORTANTE: Solo incluir horaSalida si tiene valor
-      if (formData.horaSalida && formData.horaSalida.trim() !== "") {
-        payload.horaSalida = formData.horaSalida.trim();
-      }
-
-      // ✅ Solo incluir observaciones si existen
-      if (formData.observaciones && formData.observaciones.trim() !== "") {
-        payload.observaciones = formData.observaciones.trim();
-      }
-
-      console.log("📝 Datos de actualización (FORM):", payload);
+      if (entrada) payload.horaEntrada = entrada;
+      if (salida) payload.horaSalida = salida;
+      if (observaciones.trim()) payload.observaciones = observaciones.trim();
 
       await onUpdate(asistencia.id, payload);
-
-      // ✅ Cerrar el diálogo después de actualizar exitosamente
       onOpenChange(false);
     } catch (error) {
-      console.error("❌ Error en handleSubmit:", error);
-      // El error ya se muestra en el toast desde el hook
+      console.error("Error al actualizar asistencia:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ✅ No renderizar si no hay asistencia
-  if (!asistencia) {
-    return null;
-  }
+  const handleClose = () => {
+    setEstado(EstadoAsistencia.PRESENTE);
+    setObservaciones("");
+    setHoraEntrada(emptyTime);
+    setHoraSalida(emptyTime);
+    onOpenChange(false);
+  };
+
+  if (!asistencia) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -131,129 +212,78 @@ export function AsistenciaEditDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-4">
-            {/* Información del Empleado (Solo lectura) */}
-            <div className="bg-muted p-4 rounded-md">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="font-semibold">Empleado:</span>
-                  <p className="text-muted-foreground">
-                    {asistencia.empleado.nombreCompleto}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-semibold">Fecha:</span>
-                  <p className="text-muted-foreground">{asistencia.fecha}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Horas */}
-            <div className="grid grid-cols-2 gap-4">
+          {/* Info solo lectura */}
+          <div className="bg-muted p-4 rounded-md">
+            <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <Label htmlFor="horaEntrada" className="mb-2">
-                  Hora de Entrada
-                </Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="horaEntrada"
-                    type="time"
-                    step="1"
-                    value={formData.horaEntrada || ""}
-                    onChange={(e) =>
-                      handleChange("horaEntrada", e.target.value)
-                    }
-                    className="pl-10"
-                  />
-                </div>
-                {asistencia.horaEntrada && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Actual: {asistencia.horaEntrada}
-                  </p>
-                )}
+                <span className="font-semibold">Empleado:</span>
+                <p className="text-muted-foreground">
+                  {asistencia.empleado.nombreCompleto}
+                </p>
               </div>
-
               <div>
-                <Label htmlFor="horaSalida" className="mb-2">
-                  Hora de Salida
-                </Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="horaSalida"
-                    type="time"
-                    step="1"
-                    value={formData.horaSalida || ""}
-                    onChange={(e) => handleChange("horaSalida", e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                {asistencia.horaSalida && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Actual: {asistencia.horaSalida}
-                  </p>
-                )}
+                <span className="font-semibold">Fecha:</span>
+                <p className="text-muted-foreground">{asistencia.fecha}</p>
               </div>
             </div>
+          </div>
 
-            {/* Estado */}
-            <div>
-              <Label htmlFor="estado" className="mb-2">
-                Estado *
-              </Label>
-              <Select
-                value={formData.estado}
-                onValueChange={(value) =>
-                  handleChange("estado", value as EstadoAsistencia)
-                }
-                required
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Estados</SelectLabel>
-                    {Object.values(EstadoAsistencia).map((estado) => (
-                      <SelectItem key={estado} value={estado}>
-                        {estado.replace(/_/g, " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Horas */}
+          <div className="grid grid-cols-2 gap-4">
+            <TimeInput
+              label="Hora de Entrada"
+              value={horaEntrada}
+              onChange={setHoraEntrada}
+              current={asistencia.horaEntrada ?? undefined}
+            />
+            <TimeInput
+              label="Hora de Salida"
+              value={horaSalida}
+              onChange={setHoraSalida}
+              current={asistencia.horaSalida ?? undefined}
+            />
+          </div>
 
-            {/* Observaciones */}
-            <div>
-              <Label htmlFor="observaciones" className="mb-2">
-                Observaciones
-              </Label>
-              <Textarea
-                id="observaciones"
-                value={formData.observaciones || ""}
-                onChange={(e) => handleChange("observaciones", e.target.value)}
-                placeholder="Agregar comentarios adicionales..."
-                rows={3}
-              />
-            </div>
+          {/* Estado */}
+          <div>
+            <Label className="mb-2">Estado *</Label>
+            <Select
+              value={estado}
+              onValueChange={(value) => setEstado(value as EstadoAsistencia)}
+              required
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona un estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Estados</SelectLabel>
+                  {Object.values(EstadoAsistencia).map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e.replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Observaciones */}
+          <div>
+            <Label className="mb-2">Observaciones</Label>
+            <Textarea
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Agregar comentarios adicionales..."
+              rows={3}
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                // Resetear formulario al cerrar
-                setFormData({
-                  horaEntrada: "",
-                  horaSalida: "",
-                  estado: EstadoAsistencia.PRESENTE,
-                  observaciones: "",
-                });
-                onOpenChange(false);
-              }}
+              onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancelar

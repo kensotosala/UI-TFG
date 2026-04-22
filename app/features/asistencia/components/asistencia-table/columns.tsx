@@ -155,7 +155,7 @@ export const columns = (
       const hora = getValue<string | null>();
       return (
         <div className="text-center font-mono">
-          {hora ? format(new Date(`2000-01-01T${hora}`), "HH:mm") : "-"}
+          {hora ? format(new Date(`2000-01-01T${hora}`), "hh:mm a") : "-"}
         </div>
       );
     },
@@ -176,7 +176,7 @@ export const columns = (
       const hora = getValue<string | null>();
       return (
         <div className="text-center font-mono">
-          {hora ? format(new Date(`2000-01-01T${hora}`), "HH:mm") : "-"}
+          {hora ? format(new Date(`2000-01-01T${hora}`), "hh:mm a") : "-"}
         </div>
       );
     },

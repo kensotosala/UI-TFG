@@ -37,6 +37,18 @@ interface AsistenciaCreateDialogProps {
   onCreate: (data: CrearAsistenciaDTO) => Promise<void>;
 }
 
+interface TimeValue {
+  hours: string;
+  minutes: string;
+  period: "AM" | "PM";
+}
+
+const initialTimeValue: TimeValue = {
+  hours: "",
+  minutes: "",
+  period: "AM",
+};
+
 const initialFormData: CrearAsistenciaDTO = {
   empleadoId: "",
   fechaRegistro: "",
@@ -45,6 +57,94 @@ const initialFormData: CrearAsistenciaDTO = {
   estado: EstadoAsistencia.PRESENTE,
   observaciones: "",
 };
+
+// Convierte TimeValue a formato HH:mm (24h) para el backend
+function to24Hour(time: TimeValue): string {
+  if (!time.hours || !time.minutes) return "";
+  let h = parseInt(time.hours, 10);
+  if (time.period === "AM" && h === 12) h = 0;
+  if (time.period === "PM" && h !== 12) h += 12;
+  return `${String(h).padStart(2, "0")}:${time.minutes.padStart(2, "0")}`;
+}
+
+function TimeInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: TimeValue;
+  onChange: (val: TimeValue) => void;
+}) {
+  return (
+    <div>
+      <Label className="mb-2">{label}</Label>
+      <div className="flex items-center gap-1 border rounded-md px-3 py-2 bg-background focus-within:ring-2 focus-within:ring-ring">
+        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+
+        {/* Horas */}
+        <input
+          type="number"
+          min={1}
+          max={12}
+          placeholder="HH"
+          value={value.hours}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "" || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
+              onChange({ ...value, hours: val });
+            }
+          }}
+          className="w-8 text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+
+        <span className="text-muted-foreground">:</span>
+
+        {/* Minutos */}
+        <input
+          type="number"
+          min={0}
+          max={59}
+          placeholder="MM"
+          value={value.minutes}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+              onChange({ ...value, minutes: val });
+            }
+          }}
+          className="w-8 text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+
+        {/* AM/PM toggle */}
+        <div className="ml-1 flex rounded overflow-hidden border text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, period: "AM" })}
+            className={`px-2 py-0.5 transition-colors ${
+              value.period === "AM"
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, period: "PM" })}
+            className={`px-2 py-0.5 transition-colors ${
+              value.period === "PM"
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AsistenciaCreateDialog({
   open,
@@ -55,6 +155,8 @@ export function AsistenciaCreateDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openPopover, setOpenPopover] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [horaEntrada, setHoraEntrada] = useState<TimeValue>(initialTimeValue);
+  const [horaSalida, setHoraSalida] = useState<TimeValue>(initialTimeValue);
 
   const { empleados } = useEmpleados();
 
@@ -74,54 +176,43 @@ export function AsistenciaCreateDialog({
     setIsSubmitting(true);
 
     try {
-      // Validaciones antes de enviar
       if (!formData.empleadoId) {
         alert("Por favor seleccione un empleado");
         return;
       }
-
       if (!formData.fechaRegistro) {
         alert("Por favor seleccione una fecha");
         return;
       }
-
       if (!formData.estado) {
         alert("Por favor seleccione un estado");
         return;
       }
 
-      // Preparar payload - El servicio se encargará del formato
       const payload: CrearAsistenciaDTO = {
         empleadoId: formData.empleadoId,
         fechaRegistro: formData.fechaRegistro,
         estado: formData.estado,
       };
 
-      // Solo agregar horaEntrada si existe y no está vacía
-      if (formData.horaEntrada && formData.horaEntrada.trim() !== "") {
-        payload.horaEntrada = formData.horaEntrada;
-      }
+      const entrada = to24Hour(horaEntrada);
+      const salida = to24Hour(horaSalida);
 
-      // Solo agregar horaSalida si existe y no está vacía
-      if (formData.horaSalida && formData.horaSalida.trim() !== "") {
-        payload.horaSalida = formData.horaSalida;
-      }
-
-      // Solo agregar observaciones si existen y no están vacías
-      if (formData.observaciones && formData.observaciones.trim() !== "") {
+      if (entrada) payload.horaEntrada = entrada;
+      if (salida) payload.horaSalida = salida;
+      if (formData.observaciones?.trim()) {
         payload.observaciones = formData.observaciones;
       }
 
-      console.log("📝 Datos del formulario:", payload);
-
       await onCreate(payload);
 
-      // Resetear formulario y cerrar diálogo
       setFormData(initialFormData);
       setDate(undefined);
+      setHoraEntrada(initialTimeValue);
+      setHoraSalida(initialTimeValue);
       onOpenChange(false);
     } catch (error) {
-      console.error("❌ Error en handleSubmit:", error);
+      console.error("Error en handleSubmit:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +284,6 @@ export function AsistenciaCreateDialog({
                     onSelect={(selectedDate) => {
                       if (!selectedDate) return;
                       setDate(selectedDate);
-                      // ✅ CORREGIDO: Usar fechaRegistro
                       handleChange(
                         "fechaRegistro",
                         formatDateToISO(selectedDate),
@@ -207,39 +297,16 @@ export function AsistenciaCreateDialog({
 
             {/* Horas */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="horaEntrada" className="mb-2">
-                  Hora de Entrada
-                </Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="horaEntrada"
-                    type="time"
-                    value={formData.horaEntrada || ""}
-                    onChange={(e) =>
-                      handleChange("horaEntrada", e.target.value)
-                    }
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="horaSalida" className="mb-2">
-                  Hora de Salida
-                </Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input
-                    id="horaSalida"
-                    type="time"
-                    value={formData.horaSalida || ""}
-                    onChange={(e) => handleChange("horaSalida", e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+              <TimeInput
+                label="Hora de Entrada"
+                value={horaEntrada}
+                onChange={setHoraEntrada}
+              />
+              <TimeInput
+                label="Hora de Salida"
+                value={horaSalida}
+                onChange={setHoraSalida}
+              />
             </div>
 
             {/* Estado */}
@@ -292,6 +359,8 @@ export function AsistenciaCreateDialog({
               onClick={() => {
                 setFormData(initialFormData);
                 setDate(undefined);
+                setHoraEntrada(initialTimeValue);
+                setHoraSalida(initialTimeValue);
                 onOpenChange(false);
               }}
               disabled={isSubmitting}

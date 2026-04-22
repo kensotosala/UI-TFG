@@ -135,6 +135,23 @@ const styles = StyleSheet.create({
   },
 });
 
+function formatTime(timeStr?: string | null): string {
+  if (!timeStr) return "-";
+
+  // Extrae solo HH:MM (ignora segundos si existen)
+  const parts = timeStr.split(":");
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1] || "00";
+
+  if (isNaN(hours)) return "-";
+
+  const period = hours >= 12 ? "pm" : "am";
+  let hour12 = hours % 12;
+  if (hour12 === 0) hour12 = 12;
+
+  return `${hour12}:${minutes.padStart(2, "0")} ${period}`;
+}
+
 // Formatea fecha legible
 function formatDate(dateStr: string): string {
   try {
@@ -224,8 +241,8 @@ export const AsistenciaPDF = ({
                 <Text style={styles.tableCell}>{a.empleadoId ?? "-"}</Text>
               )}
               <Text style={styles.tableCell}>{formatDate(a.fecha)}</Text>
-              <Text style={styles.tableCell}>{a.horaEntrada ?? "-"}</Text>
-              <Text style={styles.tableCell}>{a.horaSalida ?? "-"}</Text>
+              <Text style={styles.tableCell}>{formatTime(a.horaEntrada)}</Text>
+              <Text style={styles.tableCell}>{formatTime(a.horaSalida)}</Text>
               <Text style={styles.tableCell}>{a.estado ?? "-"}</Text>
               <Text style={styles.tableCell}>{a.observaciones ?? "-"}</Text>
             </View>
