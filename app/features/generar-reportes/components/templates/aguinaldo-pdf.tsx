@@ -178,7 +178,7 @@ function formatDate(dateStr?: string | null): string {
 function formatMoney(amount: number): string {
   const [intPart, decPart] = amount.toFixed(2).split(".");
   const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `${intFormatted},${decPart}`;
+  return `CRC ${intFormatted},${decPart}`;
 }
 
 // ── Componente ────────────────────────────────────────

@@ -157,12 +157,10 @@ function formatDate(dateStr?: string) {
 
 function formatMoney(amount?: number) {
   if (amount == null) return "-";
-
-  return amount.toLocaleString("es-CR", {
-    style: "currency",
-    currency: "CRC",
+  const numeric = amount.toLocaleString("es-CR", {
     maximumFractionDigits: 0,
   });
+  return `CRC ${numeric}`;
 }
 
 interface NominaPDFProps {
